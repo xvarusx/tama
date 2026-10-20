@@ -1,0 +1,84 @@
+name: Test
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    tests:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        services:
+            mysql:
+                image: mysql:8.0
+                env:
+                    MYSQL_ROOT_PASSWORD: root
+                    MYSQL_DATABASE: erp
+                ports:
+                    - 3306:3306
+                options: >-
+                    --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=10
+                    --health-start-period=10s
+
+        env:
+            APP_ENV: test
+            DATABASE_URL: "mysql://root:root@127.0.0.1:3306/erp"
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.4"
+                  coverage: none
+
+            - name: Install dependencies
+              uses: ramsey/composer-install@v3
+
+            - name: Create test database
+              run: php bin/console doctrine:database:create --if-not-exists --env=test
+
+            - name: Create database schema
+              run: php bin/console doctrine:schema:create --env=test
+
+            - name: Run unit tests
+              run: composer unit-test
+
+            - name: Run integration tests
+              run: composer integration-test
+
+            - name: Run application tests
+              run: composer application-test
+
+            - name: Audit dependencies
+              run: composer audit --locked
+
+    code-style:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.4"
+                  coverage: none
+
+            - name: Install dependencies
+              uses: ramsey/composer-install@v3
+
+            - name: Check code style
+              run: vendor/bin/php-cs-fixer fix --dry-run --diff

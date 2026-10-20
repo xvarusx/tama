@@ -1,0 +1,233 @@
+services:
+  api-gateway:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      autodiscovery:
+        condition: service_healthy
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./infrastructure/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - microservice_net
+  autodiscovery:
+    build:
+      context: ./infrastructure/autodiscovery
+    command: ["agent", "-dev", "-client=0.0.0.0", "-ui"]
+    restart: unless-stopped
+    mem_limit: 128m
+    networks:
+      - microservice_net
+    ports:
+      - "127.0.0.1:8500:8500"
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: erp-rabbitmq
+    restart: always
+    ports:
+      # AMQP protocol port (for applications to connect)
+      - "5672:5672"
+      # HTTP API and Management UI port
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${AUTH_RABITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${AUTH_RABITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  authentication-service:
+    build:
+      context: ./services/authentication-service
+      additional_contexts:
+        infra: ./infrastructure
+    restart: unless-stopped
+    depends_on:
+      autodiscovery:
+        condition: service_healthy
+      authentication-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "mysql://${AUTH_DB_USER}:${AUTH_DB_PASSWORD}@authentication-db:3306/${AUTH_DB_NAME}?serverVersion=8.4&charset=utf8mb4"
+      CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
+      CONSUL_SERVICE_NAME: "authentication-service"
+      CONSUL_SERVICE_PORT: "9000"
+    entrypoint: ["/usr/local/bin/register.sh"]
+    expose:
+      - "9000"
+    networks:
+      - microservice_net
+
+  authentication-service-web:
+    build:
+      context: ./services/authentication-service
+      dockerfile: nginx.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - authentication-service
+    expose:
+      - "80"
+    networks:
+      - microservice_net
+
+  authentication-db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${AUTH_DB_NAME}
+      MYSQL_USER: ${AUTH_DB_USER}
+      MYSQL_PASSWORD: ${AUTH_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${AUTH_DB_ROOT_PASSWORD}
+    volumes:
+      - authentication_db_data:/var/lib/mysql
+    networks:
+      - microservice_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  client-service:
+    build:
+      context: ./services/client-service
+      additional_contexts:
+        infra: ./infrastructure
+    restart: unless-stopped
+    depends_on:
+      autodiscovery:
+        condition: service_healthy
+      client-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "mysql://${CLIENT_DB_USER}:${CLIENT_DB_PASSWORD}@client-db:3306/${CLIENT_DB_NAME}?serverVersion=8.4&charset=utf8mb4"
+      CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
+      CONSUL_SERVICE_NAME: "client-service"
+      CONSUL_SERVICE_PORT: "9000"
+    entrypoint: ["/usr/local/bin/register.sh"]
+    expose:
+      - "9000"
+    networks:
+      - microservice_net
+
+  client-service-web:
+    build:
+      context: ./services/client-service
+      dockerfile: nginx.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - client-service
+    expose:
+      - "80"
+    networks:
+      - microservice_net
+
+  client-db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${CLIENT_DB_NAME}
+      MYSQL_USER: ${CLIENT_DB_USER}
+      MYSQL_PASSWORD: ${CLIENT_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${CLIENT_DB_ROOT_PASSWORD}
+    volumes:
+      - client_db_data:/var/lib/mysql
+    networks:
+      - microservice_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  inventory-service:
+    build:
+      context: ./services/inventory-service
+      additional_contexts:
+        infra: ./infrastructure
+    restart: unless-stopped
+    depends_on:
+      autodiscovery:
+        condition: service_healthy
+      inventory-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "mysql://${INVENTORY_DB_USER}:${INVENTORY_DB_PASSWORD}@inventory-db:3306/${INVENTORY_DB_NAME}?serverVersion=8.4&charset=utf8mb4"
+      CONSUL_SERVICE_NAME: "inventory-service"
+      CONSUL_SERVICE_PORT: "9000"
+      CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
+    entrypoint: ["/usr/local/bin/register.sh"]
+    expose:
+      - "9000"
+    networks:
+      - microservice_net
+
+  inventory-service-web:
+    build:
+      context: ./services/inventory-service/
+      dockerfile: nginx.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - inventory-service
+    expose:
+      - "80"
+    networks:
+      - microservice_net
+
+  inventory-db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${INVENTORY_DB_NAME}
+      MYSQL_USER: ${INVENTORY_DB_USER}
+      MYSQL_PASSWORD: ${INVENTORY_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${INVENTORY_DB_ROOT_PASSWORD}
+    volumes:
+      - inventory_db_data:/var/lib/mysql
+    networks:
+      - microservice_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+networks:
+  microservice_net:
+    driver: bridge
+
+volumes:
+  authentication_db_data:
+  client_db_data:
+  inventory_db_data:
+  rabbitmq_data:
+  rabbitmq_logs:
