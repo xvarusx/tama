@@ -66,7 +66,6 @@
         "unit-test": "phpunit --testsuite Unit",
         "integration-test": "phpunit --testsuite Integration",
         "application-test": "phpunit --testsuite Application",
-        "test": "phpunit",
         "csfix": "vendor/bin/php-cs-fixer fix",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
