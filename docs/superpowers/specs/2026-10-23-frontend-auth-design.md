@@ -46,7 +46,11 @@ shape keeps `roles` so it can be enforced later without reworking the plumbing.
 - **Login flow:** `POST /api/auth/login` validates input, forwards it to
   `POST {AUTH_SERVICE_URL}/api/user_login`, sets the cookie on success, and
   returns `{ user }` without the token. Backend status/message is forwarded for
-  invalid credentials, throttling, and validation errors.
+  invalid credentials and validation errors; throttling uses a generic message.
+- **Request validation:** `POST /api/auth/login` and `/api/auth/register` require
+  `Content-Type: application/json` (HTML forms cannot send it) and reject
+  requests whose `Origin`/`Sec-Fetch-Site` mark them as cross-site. This closes
+  the login-CSRF path while keeping non-browser clients usable.
 - **Logout flow:** `POST /api/auth/logout` calls the backend logout with
   `X-AUTH-TOKEN` (best effort), deletes the cookie, and returns 200. The client
   redirects to `/login` and refreshes.
@@ -71,7 +75,8 @@ shape keeps `roles` so it can be enforced later without reworking the plumbing.
   the secure check happens in the data-access layer.
 - **Data access layer:** `lib/auth/dal.ts` exposes `getCurrentUser()`, memoized
   with React `cache`, which reads the cookie, calls `/api/me`, and redirects on
-  missing/invalid sessions. Dashboard pages use it before rendering user data.
+  missing/invalid sessions. Every dashboard page calls it before rendering user
+  data, so a PPR shell cannot emit page content before the redirect resolves.
 - **Server-side API client:** `lib/auth/backend.ts` centralizes the base URL and
   `X-AUTH-TOKEN` header so future service calls reuse one place.
 - **Roles:** `AuthUser` includes `roles`; no role checks are enforced in this
@@ -84,8 +89,8 @@ shape keeps `roles` so it can be enforced later without reworking the plumbing.
   IP (3 attempts) and does not trust proxy headers. Since all logins now arrive
   from the Next server, everyone shares one throttle bucket. Fixing that needs a
   trusted-proxy contract across the gateway and Symfony, which is out of scope
-  for this change; the login error path will surface the backend's throttling
-  message.
+  for this change; the login error path shows a generic throttling message
+  instead of the backend's raw text.
 - **Cleanup:** remove `utils/jwt.tsx` and `utils/proxy.tsx`; the proxy logic moves
   to root `proxy.ts`.
 - **UI:** dashboard layout gets a header with the signed-in email and a logout
