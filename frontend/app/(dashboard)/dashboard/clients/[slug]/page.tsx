@@ -1,6 +1,7 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Badge from "@/components/ui/badge/Badge";
 import { ChevronLeftIcon } from "@/icons";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { clients } from "@/lib/dashboard-data";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,11 +12,14 @@ const currency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+export const instant = false;
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await getCurrentUser();
   const { slug } = await params;
   const client = clients.find((item) => item.slug === slug);
   return { title: client ? `${client.name} | ERP` : "Client not found | ERP" };
@@ -26,6 +30,7 @@ export default async function ClientDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await getCurrentUser();
   const { slug } = await params;
   const client = clients.find((item) => item.slug === slug);
 

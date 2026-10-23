@@ -10,6 +10,7 @@ import {
   BoxIconLine,
   GroupIcon,
 } from "@/icons";
+import { getCurrentUser } from "@/lib/auth/dal";
 import {
   clients,
   computeInventorySummary,
@@ -21,7 +22,10 @@ export const metadata = {
   title: "Dashboard | ERP",
 };
 
-export default function DashboardPage() {
+export const instant = false;
+
+export default async function DashboardPage() {
+  await getCurrentUser();
   const summary = computeInventorySummary(inventory);
   const lowStock = summary.lowStock + summary.outOfStock;
 
