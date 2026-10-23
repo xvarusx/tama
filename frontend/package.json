@@ -10,8 +10,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "apexcharts": "^8.4.1",
     "next": "16.4.1",
     "react": "19.3.0",
+    "react-apexcharts": "^2.1.1",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1"
   },
