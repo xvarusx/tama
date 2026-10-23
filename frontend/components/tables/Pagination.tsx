@@ -1,3 +1,5 @@
+import { getPaginationItems } from "@/lib/pagination";
+
 type PaginationProps = {
   currentPage: number;
   totalPages: number;
@@ -9,16 +11,9 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  if (totalPages <= 1) return null;
+  const items = getPaginationItems(currentPage, totalPages);
 
-  const start = Math.min(
-    Math.max(currentPage - 1, 1),
-    Math.max(totalPages - 2, 1),
-  );
-  const pages = Array.from(
-    { length: Math.min(3, totalPages) },
-    (_, index) => start + index,
-  ).filter((page) => page <= totalPages);
+  if (items.length === 0) return null;
 
   return (
     <div className="flex items-center">
@@ -31,22 +26,26 @@ const Pagination: React.FC<PaginationProps> = ({
         Previous
       </button>
       <div className="flex items-center gap-2">
-        {currentPage > 3 && <span className="px-2">...</span>}
-        {pages.map((page) => (
-          <button
-            key={page}
-            type="button"
-            onClick={() => onPageChange(page)}
-            className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium ${
-              currentPage === page
-                ? "bg-brand-500 text-white"
-                : "text-gray-700 hover:bg-blue-500/8 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-500"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        {currentPage < totalPages - 2 && <span className="px-2">...</span>}
+        {items.map((item, index) =>
+          item === "ellipsis" ? (
+            <span key={`ellipsis-${index}`} className="px-2">
+              ...
+            </span>
+          ) : (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onPageChange(item)}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium ${
+                currentPage === item
+                  ? "bg-brand-500 text-white"
+                  : "text-gray-700 hover:bg-blue-500/8 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-500"
+              }`}
+            >
+              {item}
+            </button>
+          ),
+        )}
       </div>
       <button
         type="button"

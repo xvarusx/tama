@@ -6,7 +6,9 @@ export default function ThemeTogglerTwo() {
   const { toggleTheme } = useTheme();
   return (
     <button
+      type="button"
       onClick={toggleTheme}
+      aria-label="Toggle theme"
       className="inline-flex size-14 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-600"
     >
       <svg

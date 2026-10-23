@@ -72,10 +72,11 @@ export default function SignInForm() {
                   </div>
                 )}
                 <div>
-                  <Label>
+                  <Label htmlFor="email">
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
                   <Input
+                    id="email"
                     placeholder="info@gmail.com"
                     type="email"
                     name="email"
@@ -86,11 +87,12 @@ export default function SignInForm() {
                   />
                 </div>
                 <div>
-                  <Label>
+                  <Label htmlFor="password">
                     Password <span className="text-error-500">*</span>{" "}
                   </Label>
                   <div className="relative">
                     <Input
+                      id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       name="password"
@@ -99,16 +101,21 @@ export default function SignInForm() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
-                    <span
+                    <button
+                      type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="inset-e-4 absolute top-1/2 z-30 -translate-y-1/2 cursor-pointer"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      aria-pressed={showPassword}
+                      className="inset-e-4 absolute top-1/2 z-30 -translate-y-1/2 cursor-pointer rounded p-1 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-hidden"
                     >
                       {showPassword ? (
                         <EyeIcon className="fill-gray-500 dark:fill-gray-400" />
                       ) : (
                         <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400" />
                       )}
-                    </span>
+                    </button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
