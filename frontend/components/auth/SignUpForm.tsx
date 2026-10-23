@@ -130,11 +130,15 @@ export default function SignUpForm() {
                   {/* <!-- Checkbox --> */}
                   <div className="flex items-center gap-3">
                     <Checkbox
+                      id="terms"
                       className="h-5 w-5"
                       checked={isChecked}
                       onChange={setIsChecked}
                     />
-                    <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
+                    <label
+                      htmlFor="terms"
+                      className="inline-block cursor-pointer font-normal text-gray-500 dark:text-gray-400"
+                    >
                       By creating an account means you agree to the{" "}
                       <span className="text-gray-800 dark:text-white/90">
                         Terms and Conditions,
@@ -143,7 +147,7 @@ export default function SignUpForm() {
                       <span className="text-gray-800 dark:text-white">
                         Privacy Policy
                       </span>
-                    </p>
+                    </label>
                   </div>
                   {/* <!-- Button --> */}
                   <div>
