@@ -26,5 +26,6 @@ export async function authRequest(
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     cache: "no-store",
+    signal: AbortSignal.timeout(5000),
   });
 }

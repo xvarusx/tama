@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authRequest } from "@/lib/auth/backend";
 import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { validateAuthRequest } from "@/lib/auth/request";
 
 type RegisterBody = {
   email?: unknown;
@@ -8,6 +9,14 @@ type RegisterBody = {
 };
 
 export async function POST(request: Request) {
+  const rejection = validateAuthRequest(request);
+  if (rejection) {
+    return NextResponse.json(
+      { error: rejection.error },
+      { status: rejection.status },
+    );
+  }
+
   let body: RegisterBody | null = null;
 
   try {

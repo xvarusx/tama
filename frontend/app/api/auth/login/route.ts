@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authRequest } from "@/lib/auth/backend";
 import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { validateAuthRequest } from "@/lib/auth/request";
 import { createSession } from "@/lib/auth/session";
 
 type LoginBody = {
@@ -10,6 +11,14 @@ type LoginBody = {
 };
 
 export async function POST(request: Request) {
+  const rejection = validateAuthRequest(request);
+  if (rejection) {
+    return NextResponse.json(
+      { error: rejection.error },
+      { status: rejection.status },
+    );
+  }
+
   let body: LoginBody | null = null;
 
   try {
