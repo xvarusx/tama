@@ -1,4 +1,22 @@
 services:
+  inventory-migrate:
+    build:
+      context: ./services/inventory-service
+      additional_contexts:
+        infra: ./infrastructure
+    restart: "no"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      REDIS_URL: 'redis://inventory-cache-redis:6379'
+      MESSENGER_TRANSPORT_DSN: "amqp://${AUTH_RABITMQ_USER}:${AUTH_RABITMQ_PASSWORD}@rabbitmq:5672/%2f"
+      DATABASE_URL: "mysql://${INVENTORY_DB_USER}:${INVENTORY_DB_PASSWORD}@inventory-db:3306/${INVENTORY_DB_NAME}?serverVersion=8.4&charset=utf8mb4"
+    command: php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+    networks:
+      - microservice_net
+
   inventory-service:
     build:
       context: ./services/inventory-service
@@ -12,6 +30,8 @@ services:
         condition: service_healthy
       inventory-cache-redis:
         condition: service_healthy
+      inventory-migrate:
+        condition: service_completed_successfully
     environment:
       APP_ENV: dev
       REDIS_URL: 'redis://inventory-cache-redis:6379'
@@ -40,6 +60,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      inventory-migrate:
+        condition: service_completed_successfully
     environment:
       APP_ENV: dev
       REDIS_URL: 'redis://inventory-cache-redis:6379'
