@@ -36,7 +36,10 @@ final class ContactApiTest extends WebTestCase
         static::getContainer()->set(HttpClientInterface::class, $httpClient);
 
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        (new SchemaTool($entityManager))->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
+        $schemaTool = new SchemaTool($entityManager);
+        $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
+        $schemaTool->dropSchema($metadata);
+        $schemaTool->createSchema($metadata);
 
         $client->request(
             'POST',

@@ -8,23 +8,22 @@ services:
     depends_on:
       autodiscovery:
         condition: service_healthy
-      authentication-service-web:
-        condition: service_started
       contact-db:
         condition: service_healthy
       contact-cache-redis:
         condition: service_healthy
     environment:
       APP_ENV: dev
-      APP_SECRET: "${CONTACT_APP_SECRET:-development-only-secret}"
-      DEFAULT_URI: "${CONTACT_DEFAULT_URI:-http://localhost}"
       DATABASE_URL: "mysql://${CONTACT_DB_USER:-contact}:${CONTACT_DB_PASSWORD:-contact}@contact-db:3306/${CONTACT_DB_NAME:-contact_db}?serverVersion=8.4&charset=utf8mb4"
       REDIS_URL: "redis://contact-cache-redis:6379"
       AUTHENTICATION_SERVICE_URL: "http://authentication-service-web"
       CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
       CONSUL_SERVICE_NAME: "contact-service"
       CONSUL_SERVICE_PORT: "9000"
-    entrypoint: ["/usr/local/bin/contact-entrypoint.sh"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
     expose:
       - "9000"
     networks:
@@ -37,7 +36,7 @@ services:
         - action: sync+restart
           path: ./services/contact-service/config
           target: /srv/app/config
-        - action: sync+restart
+        - action: sync
           path: ./services/contact-service/migrations
           target: /srv/app/migrations
         - action: sync
@@ -56,8 +55,6 @@ services:
           path: ./services/contact-service/docker/php.ini
         - action: rebuild
           path: ./services/contact-service/docker/php-fpm.conf
-        - action: rebuild
-          path: ./services/contact-service/docker/contact-entrypoint.sh
 
   contact-service-web:
     build:

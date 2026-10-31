@@ -18,8 +18,10 @@ final class ContactRepositoryTest extends KernelTestCase
     {
         self::bootKernel();
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $schemaTool = new SchemaTool($entityManager);
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
-        (new SchemaTool($entityManager))->createSchema($metadata);
+        $schemaTool->dropSchema($metadata);
+        $schemaTool->createSchema($metadata);
 
         $contact = new Contact('Northwind Traders', 42, ContactType::SUPPLIER);
         $contact->markUpdatedBy(84);
@@ -40,8 +42,10 @@ final class ContactRepositoryTest extends KernelTestCase
     {
         self::bootKernel();
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $schemaTool = new SchemaTool($entityManager);
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
-        (new SchemaTool($entityManager))->createSchema($metadata);
+        $schemaTool->dropSchema($metadata);
+        $schemaTool->createSchema($metadata);
 
         (new AppFixtures())->load($entityManager);
 

@@ -19,7 +19,6 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
-#[Route('/api/authenticator')]
 final class ApiRegisterController extends AbstractController
 {
     public function __construct(
@@ -31,7 +30,7 @@ final class ApiRegisterController extends AbstractController
     ) {
     }
 
-    #[Route('/user_register', name: 'app_api_user_register', methods: ['POST'])]
+    #[Route('/api/authenticator/user_register', name: 'app_api_user_register', methods: ['POST'])]
     public function registerUser(Request $request): JsonResponse
     {
         try {
@@ -96,7 +95,7 @@ final class ApiRegisterController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    #[Route('/verify/email', name: 'api_verify_email')]
+    #[Route('/api/authenticator/verify/email', name: 'api_verify_email')]
     public function verifyUserEmail(Request $request): JsonResponse
     {
         $userId = $request->query->get('id');

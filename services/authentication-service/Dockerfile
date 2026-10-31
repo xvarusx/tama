@@ -42,8 +42,7 @@ RUN composer install \
 COPY --chown=www-data:www-data . .
 
 # Prepare Symfony writable directories
-RUN touch .env \
-    && mkdir -p var/cache var/log \
+RUN mkdir -p var/cache var/log \
     && chown -R www-data:www-data var
 
 COPY --from=infra base/scripts/register.sh /usr/local/bin/register.sh

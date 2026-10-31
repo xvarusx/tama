@@ -1,5 +1,7 @@
 # Local environment overrides
 /.env
+**/.env
+**/.env.dev
 **/.env.local
 **/.env.*.local
 **/.env.local.php
@@ -32,3 +34,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# PHP CS Fixer configuration
+/.php-cs-fixer.php

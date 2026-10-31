@@ -1,0 +1,24 @@
+framework:
+    cache:
+        app: cache.adapter.redis
+        default_redis_provider: "%env(REDIS_URL)%"
+        pools:
+            cache.inventory:
+                adapter: cache.adapter.redis_tag_aware
+
+when@test:
+    services:
+        # Same in-memory ArrayAdapter as cache.adapter.array, but this service
+        # definition does not inherit the cache.pool reset tag, so items
+        # survive the service reset between HTTP requests. Each test kernel
+        # still gets a fresh container, hence a fresh store.
+        app.cache.array_non_resettable:
+            class: Symfony\Component\Cache\Adapter\ArrayAdapter
+            arguments: [0, false]
+    framework:
+        cache:
+            app: cache.adapter.array
+            pools:
+                cache.inventory:
+                    adapter: app.cache.array_non_resettable
+                    tags: true

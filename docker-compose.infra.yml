@@ -1,0 +1,60 @@
+services:
+  api-gateway:
+    build:
+      context: ./infrastructure/gateway
+    restart: unless-stopped
+    depends_on:
+      autodiscovery:
+        condition: service_healthy
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:80"
+    networks:
+      - microservice_net
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./infrastructure/gateway/nginx.conf
+          target: /etc/nginx/nginx.conf
+        - action: rebuild
+          path: ./infrastructure/gateway/Dockerfile
+
+  autodiscovery:
+    build:
+      context: ./infrastructure/autodiscovery
+    command: ["agent", "-dev", "-client=0.0.0.0", "-ui"]
+    restart: unless-stopped
+    mem_limit: 128m
+    networks:
+      - microservice_net
+    ports:
+      - "127.0.0.1:8500:8500"
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./infrastructure/autodiscovery/Dockerfile
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: erp-rabbitmq
+    restart: always
+    networks:
+      - microservice_net
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${AUTH_RABITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${AUTH_RABITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

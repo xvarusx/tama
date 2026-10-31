@@ -1,0 +1,7 @@
+#base-ui-_r_3_{
+  position: fixed;
+  right:15px;
+  top:15px;
+  z-index: 10000;
+  border:none;
+}
