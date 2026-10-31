@@ -20,7 +20,7 @@ final class FakeVerifyEmailHelper implements VerifyEmailHelperInterface
 
     public ?\Throwable $validationException = null;
 
-    public function __construct(private readonly string $signedUrl = 'https://example.com/api/verify/email')
+    public function __construct(private readonly string $signedUrl = 'https://example.com/api/authenticator/verify/email')
     {
     }
 

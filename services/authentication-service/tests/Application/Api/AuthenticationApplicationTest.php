@@ -22,7 +22,7 @@ final class AuthenticationApplicationTest extends WebTestCase
 
     public function testLoginIssuesATokenThatProtectsApiRoutesUntilLogout(): void
     {
-        $this->client->jsonRequest('POST', '/api/user_login', [
+        $this->client->jsonRequest('POST', '/api/authenticator/user_login', [
             'email' => 'demo@example.com',
             'password' => 'ChangeMe123!',
         ]);
@@ -34,22 +34,22 @@ final class AuthenticationApplicationTest extends WebTestCase
         self::assertSame('demo@example.com', $loginResponse['user']['email']);
 
         $token = $loginResponse['token'];
-        $this->client->request('GET', '/api/me', server: ['HTTP_X_AUTH_TOKEN' => $token]);
+        $this->client->request('GET', '/api/authenticator/me', server: ['HTTP_X_AUTH_TOKEN' => $token]);
         self::assertResponseIsSuccessful();
         $currentUser = $this->responseJson();
         self::assertSame($loginResponse['user']['id'], $currentUser['id']);
         self::assertSame('demo@example.com', $currentUser['email']);
 
-        $this->client->request('POST', '/api/user_logout', server: ['HTTP_X_AUTH_TOKEN' => $token]);
+        $this->client->request('POST', '/api/authenticator/user_logout', server: ['HTTP_X_AUTH_TOKEN' => $token]);
         self::assertResponseIsSuccessful();
 
-        $this->client->request('GET', '/api/me', server: ['HTTP_X_AUTH_TOKEN' => $token]);
+        $this->client->request('GET', '/api/authenticator/me', server: ['HTTP_X_AUTH_TOKEN' => $token]);
         self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
 
     public function testLoginRejectsIncorrectPassword(): void
     {
-        $this->client->jsonRequest('POST', '/api/user_login', [
+        $this->client->jsonRequest('POST', '/api/authenticator/user_login', [
             'email' => 'demo@example.com',
             'password' => 'incorrect',
         ]);
@@ -59,7 +59,7 @@ final class AuthenticationApplicationTest extends WebTestCase
 
     public function testProtectedRouteRejectsMissingToken(): void
     {
-        $this->client->request('GET', '/api/me');
+        $this->client->request('GET', '/api/authenticator/me');
 
         self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
         self::assertResponseFormatSame('json');

@@ -2,10 +2,10 @@
 
 ## API
 
-- `POST /api/user_register` accepts `email` and `password` JSON properties. Passwords must be at least 8 characters. It returns `201` on success and `409` if the email is already registered. A confirmation email is sent to the new address.
-- `GET /api/verify/email` validates the signed link from that email and marks the account as verified. The link does not require an API token.
-- `POST /api/user_login` accepts the same credentials and returns an API token.
-- Send that token in the `X-AUTH-TOKEN` header to access protected endpoints. `GET /api/me` returns the authenticated user's public profile, and `POST /api/user_logout` revokes the current token.
+- `POST /api/authenticator/user_register` accepts `email` and `password` JSON properties. Passwords must be at least 8 characters. It returns `201` on success and `409` if the email is already registered. A confirmation email is sent to the new address.
+- `GET /api/authenticator/verify/email` validates the signed link from that email and marks the account as verified. The link does not require an API token.
+- `POST /api/authenticator/user_login` accepts the same credentials and returns an API token.
+- Send that token in the `X-AUTH-TOKEN` header to access protected endpoints. `GET /api/authenticator/me` returns the authenticated user's public profile, and `POST /api/authenticator/user_logout` revokes the current token.
 
 Only a hash of each API token is stored. Passwords are hashed by Symfony's configured password hasher.
 

@@ -45,7 +45,7 @@ final class AuthenticationServiceAuthenticator extends AbstractAuthenticator imp
         try {
             $response = $this->httpClient->request(
                 'GET',
-                rtrim($this->authenticationServiceUrl, '/').'/api/me',
+                rtrim($this->authenticationServiceUrl, '/').'/api/authenticator/me',
                 [
                     'headers' => ['X-AUTH-TOKEN' => $token],
                     'timeout' => 3,

@@ -9,15 +9,16 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[Route('/api/authenticator')]
 final class ApiLoginController extends AbstractController
 {
-    #[Route('/api/user_login', name: 'app_api_user_login', methods: ['POST'])]
+    #[Route('/user_login', name: 'app_api_user_login', methods: ['POST'])]
     public function login(): JsonResponse
     {
         return $this->json(['message' => 'Invalid credentials.'], Response::HTTP_UNAUTHORIZED);
     }
 
-    #[Route('/api/me', name: 'app_api_me', methods: ['GET'])]
+    #[Route('/me', name: 'app_api_me', methods: ['GET'])]
     public function me(): JsonResponse
     {
         $user = $this->getUser();
@@ -34,7 +35,7 @@ final class ApiLoginController extends AbstractController
         ]);
     }
 
-    #[Route('/api/user_logout', name: 'app_api_user_logout', methods: ['POST'])]
+    #[Route('/user_logout', name: 'app_api_user_logout', methods: ['POST'])]
     public function logout(EntityManagerInterface $entityManager): JsonResponse
     {
         $user = $this->getUser();

@@ -24,7 +24,7 @@ final class ContactApiTest extends WebTestCase
         $httpClient = new MockHttpClient(
             static function (string $method, string $url, array $options) use (&$requestCount, $userIds): MockResponse {
                 self::assertSame('GET', $method);
-                self::assertSame('http://authentication-service-web/api/me', $url);
+                self::assertSame('http://authentication-service-web/api/authenticator/me', $url);
                 self::assertStringContainsString('X-AUTH-TOKEN: valid-token', implode("\r\n", $options['headers']));
 
                 return new MockResponse(

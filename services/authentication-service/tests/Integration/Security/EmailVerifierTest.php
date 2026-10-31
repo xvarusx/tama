@@ -92,7 +92,7 @@ final class EmailVerifierTest extends KernelTestCase
     private function signedUrlFrom(TemplatedEmail $message): string
     {
         $html = (string) $message->getHtmlBody();
-        self::assertMatchesRegularExpression('#href="[^"]+/api/verify/email\?[^"]+"#', $html);
+        self::assertMatchesRegularExpression('#href="[^"]+/api/authenticator/verify/email\?[^"]+"#', $html);
         preg_match('#href="([^"]+)"#', $html, $matches);
 
         return html_entity_decode($matches[1]);
