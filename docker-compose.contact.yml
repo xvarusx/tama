@@ -38,6 +38,8 @@ services:
     depends_on:
       autodiscovery:
         condition: service_healthy
+      authentication-service-web:
+        condition: service_started
       contact-db:
         condition: service_healthy
       contact-cache-redis:
