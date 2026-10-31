@@ -1,0 +1,122 @@
+services:
+  authentication-migrate:
+    build:
+      context: ./services/authentication-service
+      additional_contexts:
+        infra: ./infrastructure
+    restart: "no"
+    depends_on:
+      authentication-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      APP_SECRET: "${AUTH_APP_SECRET:-development-only-secret}"
+      DATABASE_URL: "mysql://${AUTH_DB_USER:-auth}:${AUTH_DB_PASSWORD:-auth}@authentication-db:3306/${AUTH_DB_NAME:-authentication_db}?serverVersion=8.4&charset=utf8mb4"
+    command: php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+    networks:
+      - microservice_net
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/authentication-service/migrations
+        - action: rebuild
+          path: ./services/authentication-service/config
+        - action: rebuild
+          path: ./services/authentication-service/composer.json
+        - action: rebuild
+          path: ./services/authentication-service/composer.lock
+        - action: rebuild
+          path: ./services/authentication-service/Dockerfile
+
+  authentication-service:
+    build:
+      context: ./services/authentication-service
+      additional_contexts:
+        infra: ./infrastructure
+    restart: unless-stopped
+    depends_on:
+      autodiscovery:
+        condition: service_healthy
+      authentication-db:
+        condition: service_healthy
+      authentication-migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: dev
+      APP_SECRET: "${AUTH_APP_SECRET:-development-only-secret}"
+      MAILER_DSN: "${AUTH_MAILER_DSN:-null://null}"
+      DEFAULT_URI: "${AUTH_DEFAULT_URI:-http://localhost}"
+      DATABASE_URL: "mysql://${AUTH_DB_USER:-auth}:${AUTH_DB_PASSWORD:-auth}@authentication-db:3306/${AUTH_DB_NAME:-authentication_db}?serverVersion=8.4&charset=utf8mb4"
+      CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
+      CONSUL_SERVICE_NAME: "authentication-service"
+      CONSUL_SERVICE_PORT: "9000"
+    entrypoint: ["/usr/local/bin/register.sh"]
+    expose:
+      - "9000"
+    networks:
+      - microservice_net
+    develop:
+      watch:
+        - action: sync
+          path: ./services/authentication-service/src
+          target: /srv/app/src
+        - action: sync+restart
+          path: ./services/authentication-service/config
+          target: /srv/app/config
+        - action: sync
+          path: ./services/authentication-service/migrations
+          target: /srv/app/migrations
+        - action: sync
+          path: ./services/authentication-service/templates
+          target: /srv/app/templates
+        - action: sync
+          path: ./services/authentication-service/public
+          target: /srv/app/public
+        - action: rebuild
+          path: ./services/authentication-service/composer.json
+        - action: rebuild
+          path: ./services/authentication-service/composer.lock
+        - action: rebuild
+          path: ./services/authentication-service/Dockerfile
+        - action: rebuild
+          path: ./services/authentication-service/docker/php.ini
+        - action: rebuild
+          path: ./services/authentication-service/docker/php-fpm.conf
+
+  authentication-service-web:
+    build:
+      context: ./services/authentication-service
+      dockerfile: nginx.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - authentication-service
+    expose:
+      - "80"
+    networks:
+      - microservice_net
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./services/authentication-service/docker/nginx.conf
+          target: /etc/nginx/conf.d/default.conf
+        - action: rebuild
+          path: ./services/authentication-service/nginx.Dockerfile
+
+  authentication-db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${AUTH_DB_NAME:-authentication_db}
+      MYSQL_USER: ${AUTH_DB_USER:-auth}
+      MYSQL_PASSWORD: ${AUTH_DB_PASSWORD:-auth}
+      MYSQL_ROOT_PASSWORD: ${AUTH_DB_ROOT_PASSWORD:-root}
+    volumes:
+      - authentication_db_data:/var/lib/mysql
+    networks:
+      - microservice_net
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

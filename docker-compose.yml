@@ -1,0 +1,13 @@
+include:
+  - docker-compose.infra.yml
+  - docker-compose.auth.yml
+  - docker-compose.contact.yml
+
+networks:
+  microservice_net:
+    driver: bridge
+
+volumes:
+  authentication_db_data:
+  contact_db_data:
+  contact_redis_data:
