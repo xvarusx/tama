@@ -1,44 +1,78 @@
-# ERP Frontend
+# React + TypeScript + Vite
 
-Next.js 16 App Router frontend for the ERP services. It includes a cookie-based
-BFF for the Symfony authentication service and TailAdmin-style dashboard pages.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Prerequisites
+Currently, two official plugins are available:
 
-- Node.js 20+
-- pnpm 12+
-- The authentication service running at `http://127.0.0.1:8001`
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Setup
+## React Compiler
 
-```bash
-pnpm install
-cp .env.example .env.local
-pnpm dev
+The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+
+Note: This will impact Vite dev & build performances.
+You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+
 ```
 
-Open <http://localhost:3000>. Use `localhost` rather than `127.0.0.1` during
-development so Next.js HMR is treated as same-origin.
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
-`AUTH_SERVICE_URL` is server-only and defaults to `http://127.0.0.1:8001`.
-Set it in `.env.local` when the auth service moves or the gateway is available.
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-## Commands
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 
-```bash
-pnpm test      # Vitest unit and route-handler tests
-pnpm lint      # ESLint
-pnpm build     # Production build
-pnpm start     # Serve the production build
 ```
-
-## Auth notes
-
-- The backend token lives only in the `HttpOnly` `auth_session` cookie. It is
-  never returned to browser JavaScript.
-- `proxy.ts` performs an optimistic cookie check for `/dashboard/:path*`; each
-  dashboard page also calls `getCurrentUser()` so page data is not rendered for
-  an invalid session.
-- Product, client, inventory, and notification data is currently typed sample
-  data. Only authentication talks to a live service.
-- Password reset and email verification links are out of scope for this slice.
