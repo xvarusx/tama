@@ -18,7 +18,7 @@ services:
       APP_ENV: dev
       REDIS_URL: 'redis://products-cache-redis:6379'
       MESSENGER_TRANSPORT_DSN: "amqp://${AUTH_RABITMQ_USER}:${AUTH_RABITMQ_PASSWORD}@rabbitmq:5672/%2f"
-      DATABASE_URL: "mysql://${PRODUCTS_DB_USER}:${PRODUCTS_DB_PASSWORD}@products-db:3306/${PRODUCTS_DB_NAME}?serverVersion=8.4&charset=utf8mb4"
+      DATABASE_URL: "mysql://${PRODUCTS_DB_USER:-products}:${PRODUCTS_DB_PASSWORD:-products}@products-db:3306/${PRODUCTS_DB_NAME:-products_db}?serverVersion=8.4&charset=utf8mb4"
       CONSUL_SERVICE_NAME: "product-service"
       CONSUL_SERVICE_PORT: "9000"
       CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
@@ -75,10 +75,10 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${PRODUCTS_DB_NAME}
-      MYSQL_USER: ${PRODUCTS_DB_USER}
-      MYSQL_PASSWORD: ${PRODUCTS_DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${PRODUCTS_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${PRODUCTS_DB_NAME:-products_db}
+      MYSQL_USER: ${PRODUCTS_DB_USER:-products}
+      MYSQL_PASSWORD: ${PRODUCTS_DB_PASSWORD:-products}
+      MYSQL_ROOT_PASSWORD: ${PRODUCTS_DB_ROOT_PASSWORD:-root}
     volumes:
       - product_db_data:/var/lib/mysql
     networks:

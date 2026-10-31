@@ -4,10 +4,12 @@ namespace App\Tests\Integration\MessageHandler;
 
 use App\Entity\Inventory;
 use App\Entity\InventoryMovement;
+use App\Entity\Product;
 use App\Message\ProductUpdated;
 use App\MessageHandler\ProductUpdatedHandler;
 use App\Util\Decimal;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -21,6 +23,9 @@ final class ProductUpdatedHandlerTest extends KernelTestCase
         self::bootKernel();
         $this->em = self::getContainer()->get('doctrine')->getManager();
         $this->handler = self::getContainer()->get(ProductUpdatedHandler::class);
+        if (!$this->em->getConnection()->createSchemaManager()->tablesExist(['product'])) {
+            (new SchemaTool($this->em))->createSchema([$this->em->getClassMetadata(Product::class)]);
+        }
         $this->em->getConnection()->executeStatement('DELETE FROM inventory_movement');
         $this->em->getConnection()->executeStatement('DELETE FROM inventory');
         $this->em->getConnection()->executeStatement('DELETE FROM product');
