@@ -51,7 +51,8 @@ RUN touch .env \
     && chown -R www-data:www-data var
 
 COPY --from=infra base/scripts/register.sh /usr/local/bin/register.sh
-RUN chmod +x /usr/local/bin/register.sh
+COPY docker/contact-entrypoint.sh /usr/local/bin/contact-entrypoint.sh
+RUN chmod +x /usr/local/bin/register.sh /usr/local/bin/contact-entrypoint.sh
 
 EXPOSE 9000
 

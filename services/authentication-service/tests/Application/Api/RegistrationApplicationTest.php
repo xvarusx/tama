@@ -26,7 +26,7 @@ final class RegistrationApplicationTest extends WebTestCase
 
     public function testRegistrationSendsAWorkingVerificationEmail(): void
     {
-        $this->client->jsonRequest('POST', '/api/user_register', [
+        $this->client->jsonRequest('POST', '/api/authenticator/user_register', [
             'email' => ' New.User@example.com ',
             'password' => 'StrongPassword123',
             'fullName' => 'New User',
@@ -97,7 +97,7 @@ final class RegistrationApplicationTest extends WebTestCase
 
     public function testVerificationEndpointRejectsAMissingUserId(): void
     {
-        $this->client->request('GET', '/api/verify/email');
+        $this->client->request('GET', '/api/authenticator/verify/email');
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
         self::assertStringContainsString('verify_email_error', $this->responseJson()['message']);
@@ -105,7 +105,7 @@ final class RegistrationApplicationTest extends WebTestCase
 
     public function testVerificationEndpointRejectsAnUnknownUserId(): void
     {
-        $this->client->request('GET', '/api/verify/email?id=999999');
+        $this->client->request('GET', '/api/authenticator/verify/email?id=999999');
 
         self::assertResponseStatusCodeSame(Response::HTTP_CONFLICT);
         self::assertStringContainsString('verify_email_error', $this->responseJson()['message']);
@@ -115,7 +115,7 @@ final class RegistrationApplicationTest extends WebTestCase
     {
         $this->createUser($this->entityManager, 'demo@example.com');
 
-        $this->client->jsonRequest('POST', '/api/user_register', [
+        $this->client->jsonRequest('POST', '/api/authenticator/user_register', [
             'email' => 'DEMO@example.com',
             'password' => 'StrongPassword123',
             'fullName' => 'Demo User',
@@ -127,7 +127,7 @@ final class RegistrationApplicationTest extends WebTestCase
 
     public function testRegistrationRejectsInvalidPayload(): void
     {
-        $this->client->jsonRequest('POST', '/api/user_register', [
+        $this->client->jsonRequest('POST', '/api/authenticator/user_register', [
             'email' => 'not-an-email',
             'password' => 'short',
         ]);
@@ -140,7 +140,7 @@ final class RegistrationApplicationTest extends WebTestCase
     {
         $this->client->request(
             'POST',
-            '/api/user_register',
+            '/api/authenticator/user_register',
             server: ['CONTENT_TYPE' => 'application/json'],
             content: '{invalid',
         );
@@ -151,7 +151,7 @@ final class RegistrationApplicationTest extends WebTestCase
 
     private function register(string $email): void
     {
-        $this->client->jsonRequest('POST', '/api/user_register', [
+        $this->client->jsonRequest('POST', '/api/authenticator/user_register', [
             'email' => $email,
             'password' => 'StrongPassword123',
             'fullName' => 'Example Person',
@@ -171,7 +171,7 @@ final class RegistrationApplicationTest extends WebTestCase
     private function signedUrlFrom(TemplatedEmail $message): string
     {
         $html = (string) $message->getHtmlBody();
-        self::assertMatchesRegularExpression('#href="[^"]+/api/verify/email\?[^"]+"#', $html);
+        self::assertMatchesRegularExpression('#href="[^"]+/api/authenticator/verify/email\?[^"]+"#', $html);
         preg_match('#href="([^"]+)"#', $html, $matches);
 
         return html_entity_decode($matches[1]);

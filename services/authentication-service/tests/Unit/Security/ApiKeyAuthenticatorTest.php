@@ -31,7 +31,7 @@ final class ApiKeyAuthenticatorTest extends TestCase
         );
 
         $authenticator = new ApiKeyAuthenticator($dispatcher, $repository);
-        $request = Request::create('/api/me');
+        $request = Request::create('/api/authenticator/me');
         $request->headers->set('X-AUTH-TOKEN', 'a-valid-token');
 
         $token = $this->createStub(TokenInterface::class);
@@ -50,7 +50,7 @@ final class ApiKeyAuthenticatorTest extends TestCase
         $repository->method('findOneBy')->willReturn(null);
 
         $authenticator = new ApiKeyAuthenticator(new EventDispatcher(), $repository);
-        $request = Request::create('/api/me');
+        $request = Request::create('/api/authenticator/me');
         $request->headers->set('X-AUTH-TOKEN', 'an-unknown-token');
 
         $this->expectException(CustomUserMessageAuthenticationException::class);

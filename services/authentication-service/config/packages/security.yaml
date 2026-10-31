@@ -27,11 +27,10 @@ security:
                 - App\Security\ApiKeyAuthenticator
 
     access_control:
-        - { path: ^/api/user_register$, roles: PUBLIC_ACCESS }
-        - { path: ^/api/user_login$, roles: PUBLIC_ACCESS }
-        - { path: ^/api/verify/email$, roles: PUBLIC_ACCESS }
-        - { path: ^/api, roles: ROLE_USER }
-        - { path: ^/api/verify/email, roles: ROLE_USER }
+        - { path: ^/api/authenticator/user_register$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/authenticator/user_login$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/authenticator/verify/email$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/authenticator, roles: ROLE_USER }
 
 when@test:
     security:

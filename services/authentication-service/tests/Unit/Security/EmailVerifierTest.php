@@ -19,7 +19,7 @@ final class EmailVerifierTest extends TestCase
 {
     public function testSendEmailConfirmationAddsTheSignedUrlAndExpiryContextToTheEmail(): void
     {
-        $signedUrl = 'https://example.com/api/verify/email?id=42&token=token&expires=123';
+        $signedUrl = 'https://example.com/api/authenticator/verify/email?id=42&token=token&expires=123';
         $helper = new FakeVerifyEmailHelper($signedUrl);
 
         $mailer = $this->capturingMailer();
@@ -50,7 +50,7 @@ final class EmailVerifierTest extends TestCase
         );
 
         $user = $this->userWithId(42);
-        $request = Request::create('/api/verify/email');
+        $request = Request::create('/api/authenticator/verify/email');
         $verifier->handleEmailConfirmation($request, $user);
 
         self::assertTrue($user->isVerified());
@@ -75,7 +75,7 @@ final class EmailVerifierTest extends TestCase
         $user = $this->userWithId(42);
 
         try {
-            $verifier->handleEmailConfirmation(Request::create('/api/verify/email'), $user);
+            $verifier->handleEmailConfirmation(Request::create('/api/authenticator/verify/email'), $user);
             self::fail('An invalid signature must abort the confirmation.');
         } catch (InvalidSignatureException) {
             self::assertFalse($user->isVerified());
