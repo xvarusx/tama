@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toast"
 import App from "./App.tsx";
 import SignupPage from "@/pages/(auth)/sign-up/page";
 import DashboardLayout from "@/pages/dashboard/layout";
-import ClientsPage from "@/pages/dashboard/clients/page";
+import ContactsPage from "@/pages/dashboard/contacts/page";
 import ProductsPage from "@/pages/dashboard/products/page";
 import ProtectedRoute from "@/lib/protected-routes";
 import PublicRoute from "@/lib/public-routes";
@@ -30,8 +30,8 @@ createRoot(document.getElementById("root")!).render(
           {/* private routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<Navigate to="clients" replace />} />
-            <Route path="clients" element={<ClientsPage />} />
+            <Route index element={<Navigate to="contacts" replace />} />
+            <Route path="contacts" element={<ContactsPage />} />
             <Route path="products" element={<ProductsPage />} />
           </Route>
         </Route>

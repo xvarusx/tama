@@ -36,7 +36,6 @@ COPY composer.json composer.lock ./
 
 # Install production dependencies
 RUN composer install \
-    --no-dev \
     --prefer-dist \
     --optimize-autoloader \
     --no-interaction \
@@ -49,6 +48,9 @@ COPY --chown=www-data:www-data . .
 # Prepare Symfony writable directories
 RUN mkdir -p var/cache var/log \
     && chown -R www-data:www-data var
+
+COPY --from=infra base/scripts/register.sh /usr/local/bin/register.sh
+RUN chmod +x /usr/local/bin/register.sh
 
 EXPOSE 9000
 

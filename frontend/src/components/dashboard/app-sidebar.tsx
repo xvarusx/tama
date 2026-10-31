@@ -36,8 +36,8 @@ const data = {
   },
   navMain: [
     {
-      title: "Clients",
-      url: "/dashboard/clients",
+      title: "Contacts",
+      url: "/dashboard/contacts",
       icon: SquareTerminal,
     },
     {

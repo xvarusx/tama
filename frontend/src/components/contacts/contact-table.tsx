@@ -1,5 +1,5 @@
 import { MoreHorizontalIcon } from "lucide-react"
-import { CLIENT_TYPES, type Client } from "@/services/clients-api"
+import { CONTACT_TYPES, type Contact } from "@/services/contacts-api"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -16,27 +16,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-export type ClientsStatus = "loading" | "error" | "ready"
+export type ContactsStatus = "loading" | "error" | "ready"
 
 const COLUMN_COUNT = 7
 
-interface ClientsTableProps {
-  clients: Client[]
-  status: ClientsStatus
+interface ContactsTableProps {
+  contacts: Contact[]
+  status: ContactsStatus
   error: string
   onRetry: () => void
-  onEdit: (client: Client) => void
-  onDelete: (client: Client) => void
+  onEdit: (contact: Contact) => void
+  onDelete: (contact: Contact) => void
 }
 
-export default function ClientsTable({
-  clients,
+export default function ContactsTable({
+  contacts,
   status,
   error,
   onRetry,
   onEdit,
   onDelete,
-}: ClientsTableProps) {
+}: ContactsTableProps) {
   return (
     <>
       <div className="overflow-hidden border">
@@ -48,7 +48,7 @@ export default function ClientsTable({
               <TableHead>Phone</TableHead>
               <TableHead>Address</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>CIF</TableHead>
+              <TableHead>Tax number</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -56,7 +56,7 @@ export default function ClientsTable({
             {status === "loading" && (
               <TableRow>
                 <TableCell colSpan={COLUMN_COUNT} className="text-center text-muted-foreground">
-                  Loading clients…
+                  Loading contacts…
                 </TableCell>
               </TableRow>
             )}
@@ -72,25 +72,25 @@ export default function ClientsTable({
               </TableRow>
             )}
 
-            {status === "ready" && clients.length === 0 && (
+            {status === "ready" && contacts.length === 0 && (
               <TableRow>
                 <TableCell colSpan={COLUMN_COUNT} className="text-center text-muted-foreground">
-                  No clients yet.
+                  No contacts yet.
                 </TableCell>
               </TableRow>
             )}
 
             {status === "ready" &&
-              clients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>{client.email ?? "—"}</TableCell>
-                  <TableCell>{client.phone ?? "—"}</TableCell>
-                  <TableCell>{client.address ?? "—"}</TableCell>
+              contacts.map((contact) => (
+                <TableRow key={contact.id}>
+                  <TableCell className="font-medium">{contact.name}</TableCell>
+                  <TableCell>{contact.email ?? "—"}</TableCell>
+                  <TableCell>{contact.phone ?? "—"}</TableCell>
+                  <TableCell>{contact.address ?? "—"}</TableCell>
                   <TableCell>
-                    {CLIENT_TYPES[client.type as keyof typeof CLIENT_TYPES] ?? client.type}
+                    {CONTACT_TYPES[contact.contactType] ?? contact.contactType}
                   </TableCell>
-                  <TableCell>{client.cifId ?? "—"}</TableCell>
+                  <TableCell>{contact.taxNumber ?? "—"}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -102,11 +102,11 @@ export default function ClientsTable({
                         }
                       />
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(client)}>
+                        <DropdownMenuItem onClick={() => onEdit(contact)}>
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onClick={() => onDelete(client)}>
+                        <DropdownMenuItem variant="destructive" onClick={() => onDelete(contact)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>

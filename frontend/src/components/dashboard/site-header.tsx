@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
 
 const sectionLabels: Record<string, string> = {
-  "/dashboard/clients": "Clients",
+  "/dashboard/contacts": "Contacts",
   "/dashboard/products": "Products",
 }
 

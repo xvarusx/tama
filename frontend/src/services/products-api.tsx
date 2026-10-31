@@ -1,11 +1,5 @@
 import { api } from "@/lib/api";
 
-/**
- * Product requests stay relative so the Vite proxy forwards them through the
- * gateway in development without triggering cross-origin requests.
- */
-export const PRODUCTS_API_URL = "";
-
 export const PRODUCT_STATUS = {
   active: "Active",
   archive: "Archived",
@@ -64,7 +58,6 @@ export async function getProducts(
 ): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/api/product", {
-      baseURL: PRODUCTS_API_URL,
       params: { page, limit },
     });
 
@@ -93,9 +86,7 @@ export async function getProductsTotal(): Promise<number> {
 
 export async function createProduct(input: ProductInput): Promise<Product> {
   try {
-    const response = await api.post<Product>("/api/product/", input, {
-      baseURL: PRODUCTS_API_URL,
-    });
+    const response = await api.post<Product>("/api/product/", input);
 
     return ensureProduct(response.data);
   } catch (error) {
@@ -109,9 +100,7 @@ export async function updateProduct(
   input: ProductInput,
 ): Promise<Product> {
   try {
-    const response = await api.put<Product>(`/api/product/${id}`, input, {
-      baseURL: PRODUCTS_API_URL,
-    });
+    const response = await api.put<Product>(`/api/product/${id}`, input);
 
     return ensureProduct(response.data);
   } catch (error) {

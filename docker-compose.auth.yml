@@ -16,7 +16,10 @@ services:
       CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
       CONSUL_SERVICE_NAME: "authentication-service"
       CONSUL_SERVICE_PORT: "9000"
-    entrypoint: ["/usr/local/bin/register.sh"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
     expose:
       - "9000"
     networks:

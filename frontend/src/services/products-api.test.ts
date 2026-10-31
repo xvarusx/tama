@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import {
-  PRODUCTS_API_URL,
   createProduct,
   getProducts,
   getProductsTotal,
@@ -69,7 +68,7 @@ const product: Product = {
 
 const pageCall = (page: number) => [
   "/api/product",
-  { baseURL: PRODUCTS_API_URL, params: { page, limit: 100 } },
+  { params: { page, limit: 100 } },
 ]
 
 beforeEach(() => {
@@ -83,7 +82,6 @@ describe("getProducts", () => {
     await expect(getProducts(2, 25)).resolves.toEqual([product])
 
     expect(api.get).toHaveBeenCalledWith("/api/product", {
-      baseURL: PRODUCTS_API_URL,
       params: { page: 2, limit: 25 },
     })
   })
@@ -137,9 +135,7 @@ describe("createProduct", () => {
 
     await expect(createProduct(input)).resolves.toBe(product)
 
-    expect(api.post).toHaveBeenCalledWith("/api/product/", input, {
-      baseURL: PRODUCTS_API_URL,
-    })
+    expect(api.post).toHaveBeenCalledWith("/api/product/", input)
   })
 
   it("rejects a 2xx body that carries an error instead of a product", async () => {
@@ -157,9 +153,7 @@ describe("updateProduct", () => {
 
     await expect(updateProduct(7, input)).resolves.toBe(product)
 
-    expect(api.put).toHaveBeenCalledWith("/api/product/7", input, {
-      baseURL: PRODUCTS_API_URL,
-    })
+    expect(api.put).toHaveBeenCalledWith("/api/product/7", input)
   })
 })
 
@@ -183,7 +177,6 @@ describe("setProductStatus", () => {
         imageUrl: product.imageUrl,
         status: "archive",
       },
-      { baseURL: PRODUCTS_API_URL },
     )
   })
 })

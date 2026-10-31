@@ -1,11 +1,12 @@
 import axios from "axios";
 import { getAuthToken } from "./auth-cookie";
 
-export const API_URL =
-  import.meta.env.VITE_API_URL ?? "";
-
+/**
+ * All API calls go through the same origin. In development Vite proxies
+ * `/api` to the nginx gateway (see `vite.config.ts`), so no per-service
+ * host or CORS configuration is needed.
+ */
 export const api = axios.create({
-  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { deleteClient, type Client } from "@/services/clients-api"
+import { deleteContact, type Contact } from "@/services/contacts-api"
 import { getApiErrorMessage } from "@/lib/api"
 import { toast } from "@/components/ui/toast"
 import { FieldError } from "@/components/ui/field"
@@ -14,17 +14,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-interface DeleteClientDialogProps {
-  client: Client
+interface DeleteContactDialogProps {
+  contact: Contact
   onOpenChange: (open: boolean) => void
-  onDeleted: (client: Client) => void
+  onDeleted: (contact: Contact) => void
 }
 
-export function DeleteClientDialog({
-  client,
+export function DeleteContactDialog({
+  contact,
   onOpenChange,
   onDeleted,
-}: DeleteClientDialogProps) {
+}: DeleteContactDialogProps) {
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState("")
 
@@ -33,13 +33,13 @@ export function DeleteClientDialog({
     setError("")
 
     try {
-      await deleteClient(client.id)
+      await deleteContact(contact.id)
     } catch (cause) {
-      const message = getApiErrorMessage(cause, "Unable to delete client.")
+      const message = getApiErrorMessage(cause, "Unable to delete contact.")
 
       setError(message)
       toast.add({
-        title: "Unable to delete client",
+        title: "Unable to delete contact",
         description: message,
         type: "error",
       })
@@ -49,12 +49,12 @@ export function DeleteClientDialog({
     }
 
     toast.add({
-      title: "Client deleted",
-      description: client.name,
+      title: "Contact deleted",
+      description: contact.name,
       type: "success",
     })
     onOpenChange(false)
-    onDeleted(client)
+    onDeleted(contact)
   }
 
   return (
@@ -66,9 +66,9 @@ export function DeleteClientDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete client</AlertDialogTitle>
+          <AlertDialogTitle>Delete contact</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete {client.name}? This action cannot be
+            Are you sure you want to delete {contact.name}? This action cannot be
             undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

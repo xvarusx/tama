@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ClientFormDialog } from "@/components/clients/client-form-dialog"
+import { ContactFormDialog } from "@/components/contacts/contact-form-dialog"
 import { IconPlus } from "@tabler/icons-react"
 
-interface ClientCreateProps {
+interface ContactCreateProps {
   onCreated: () => void
 }
 
-export default function ClientCreate({ onCreated }: ClientCreateProps) {
+export default function ContactCreate({ onCreated }: ContactCreateProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -15,11 +15,11 @@ export default function ClientCreate({ onCreated }: ClientCreateProps) {
       <div className="flex items-center justify-end">
         <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
           <IconPlus />
-          <span className="hidden lg:inline">Add Client</span>
+          <span className="hidden lg:inline">Add Contact</span>
         </Button>
       </div>
       {open && (
-        <ClientFormDialog
+        <ContactFormDialog
           open
           onOpenChange={setOpen}
           onSaved={() => {

@@ -1,29 +1,29 @@
 import { useEffect, useState } from "react"
-import getClients, { getClientsTotal, type Client } from "@/services/clients-api"
+import getContacts, { getContactsTotal, type Contact } from "@/services/contacts-api"
 import { getApiErrorMessage } from "@/lib/api"
 import { clampPage, getPageAfterDelete } from "@/lib/pagination"
-import ClientsTable, { type ClientsStatus } from "@/components/clients/client-table"
+import ContactsTable, { type ContactsStatus } from "@/components/contacts/contact-table"
 import TablePagination from "@/components/common/table-pagination"
-import CreateClient from "@/components/clients/client-create"
-import { ClientFormDialog } from "@/components/clients/client-form-dialog"
-import { DeleteClientDialog } from "@/components/clients/delete-client-dialog"
+import CreateContact from "@/components/contacts/contact-create"
+import { ContactFormDialog } from "@/components/contacts/contact-form-dialog"
+import { DeleteContactDialog } from "@/components/contacts/delete-contact-dialog"
 
-export default function ClientsPage() {
+export default function ContactsPage() {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
-  const [clients, setClients] = useState<Client[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [total, setTotal] = useState(0)
-  const [status, setStatus] = useState<ClientsStatus>("loading")
+  const [status, setStatus] = useState<ContactsStatus>("loading")
   const [error, setError] = useState("")
   const [reloadKey, setReloadKey] = useState(0)
-  const [editingClient, setEditingClient] = useState<Client | null>(null)
-  const [deletingClient, setDeletingClient] = useState<Client | null>(null)
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [deletingContact, setDeletingContact] = useState<Contact | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
-    Promise.all([getClients(page, limit), getClientsTotal()])
-      .then(([nextClients, nextTotal]) => {
+    Promise.all([getContacts(page, limit), getContactsTotal()])
+      .then(([nextContacts, nextTotal]) => {
         if (cancelled) return
 
         const totalPages = Math.max(1, Math.ceil(nextTotal / limit))
@@ -33,13 +33,13 @@ export default function ClientsPage() {
           return
         }
 
-        setClients(nextClients)
+        setContacts(nextContacts)
         setTotal(nextTotal)
         setStatus("ready")
       })
       .catch((cause) => {
         if (cancelled) return
-        setError(getApiErrorMessage(cause, "Unable to load clients."))
+        setError(getApiErrorMessage(cause, "Unable to load contacts."))
         setStatus("error")
       })
 
@@ -84,8 +84,8 @@ export default function ClientsPage() {
   }
 
   function handleDeleted() {
-    const nextPage = getPageAfterDelete(page, clients.length)
-    setDeletingClient(null)
+    const nextPage = getPageAfterDelete(page, contacts.length)
+    setDeletingContact(null)
 
     if (nextPage !== page) {
       beginLoading()
@@ -102,14 +102,14 @@ export default function ClientsPage() {
   return (
     <>
       <div className="flex-1 outline-none relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <CreateClient onCreated={handleCreated} />
-        <ClientsTable
-          clients={clients}
+        <CreateContact onCreated={handleCreated} />
+        <ContactsTable
+          contacts={contacts}
           status={status}
           error={error}
           onRetry={handleRetry}
-          onEdit={setEditingClient}
-          onDelete={setDeletingClient}
+          onEdit={setEditingContact}
+          onDelete={setDeletingContact}
         />
         <TablePagination
           page={page}
@@ -118,24 +118,24 @@ export default function ClientsPage() {
           onPageChange={changePage}
           onLimitChange={changeLimit}
         />
-        {editingClient && (
-          <ClientFormDialog
+        {editingContact && (
+          <ContactFormDialog
             open
-            client={editingClient}
+            contact={editingContact}
             onOpenChange={(open) => {
-              if (!open) setEditingClient(null)
+              if (!open) setEditingContact(null)
             }}
             onSaved={() => {
-              setEditingClient(null)
+              setEditingContact(null)
               handleSaved()
             }}
           />
         )}
-        {deletingClient && (
-          <DeleteClientDialog
-            client={deletingClient}
+        {deletingContact && (
+          <DeleteContactDialog
+            contact={deletingContact}
             onOpenChange={(open) => {
-              if (!open) setDeletingClient(null)
+              if (!open) setDeletingContact(null)
             }}
             onDeleted={handleDeleted}
           />

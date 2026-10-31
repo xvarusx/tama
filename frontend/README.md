@@ -2,6 +2,22 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## API gateway
+
+Every request goes to the same origin and the Vite dev server proxies `/api/*`
+to the nginx gateway. The target is configured with `VITE_API_PROXY_TARGET`
+(see `.env.example`); it defaults to `http://127.0.0.1:8081`, which matches
+`API_GATEWAY_PORT` in the repository root `.env`.
+
+| Frontend path         | Service              |
+| --------------------- | -------------------- |
+| `/api/authenticator/*` | authentication-service |
+| `/api/contact*`        | contact-service        |
+| `/api/product*`        | product-service        |
+| `/api/inventory*`      | inventory-service      |
+
+The gateway routes are defined in `infrastructure/gateway/nginx.conf`.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
