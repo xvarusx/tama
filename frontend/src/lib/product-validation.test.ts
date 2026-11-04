@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest"
 import type { Product } from "@/services/products-api"
 import {
   createEmptyProductForm,
+  createEmptyVariant,
   toProductFormValues,
   toProductInput,
+  toProductUpdateInput,
   validateProductForm,
   type ProductFormValues,
 } from "./product-validation"
@@ -12,135 +14,230 @@ const validValues = (
   overrides: Partial<ProductFormValues> = {},
 ): ProductFormValues => ({
   name: "Product",
-  sku: "SKU-1",
-  brand: "Brand",
-  unit: "kg",
-  sellingPrice: "12",
-  costPrice: "10",
-  imageUrl: "",
+  brandId: "1",
+  unitId: "2",
+  categoryId: "",
   description: "",
-  status: "active",
+  variants: [
+    { sku: "SKU-1", costPrice: "10.00", sellingPrice: "12.00", barcode: "" },
+  ],
   ...overrides,
 })
 
 const product: Product = {
   id: 7,
-  sku: "SKU-7",
-  name: "Ada",
-  description: null,
-  brand: null,
-  unit: "kg",
-  sellingPrice: "12",
-  costPrice: "10",
-  imageUrl: null,
-  status: "archive",
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: "2026-01-01T00:00:00.000Z",
-  category: null,
+  type: "product",
+  attributes: {
+    name: "Ada",
+    description: null,
+    brand: { id: 1, name: "Acme" },
+    unit: { id: 2, code: "pcs" },
+    category: { id: 3, name: "Monitors" },
+    variants: [
+      {
+        id: 11,
+        sku: "SKU-7",
+        barcode: null,
+        options: null,
+        sellingPrice: "12.00",
+        costPrice: "10.00",
+      },
+    ],
+    createdAt: "2026-01-01T00:00:00+00:00",
+    updatedAt: "2026-01-01T00:00:00+00:00",
+  },
 }
 
+describe("createEmptyProductForm", () => {
+  it("starts with exactly one empty variant", () => {
+    const values = createEmptyProductForm()
+
+    expect(values.variants).toEqual([
+      { sku: "", costPrice: "", sellingPrice: "", barcode: "" },
+    ])
+  })
+})
+
 describe("validateProductForm", () => {
-  it("requires the core fields on an empty form", () => {
+  it("requires the product and first-variant fields on an empty form", () => {
     const errors = validateProductForm(createEmptyProductForm())
 
     expect(errors.name).toBe("Name is required.")
-    expect(errors.sku).toBe("SKU is required.")
-    expect(errors.unit).toBe("Unit is required.")
-    expect(errors.sellingPrice).toBe("Selling price is required.")
-    expect(errors.costPrice).toBe("Cost price is required.")
-    expect(errors.status).toBeUndefined()
+    expect(errors.brandId).toBe("Select a brand.")
+    expect(errors.unitId).toBe("Select a unit.")
+    expect(errors.variantsMessage).toBeUndefined()
+    expect(errors.variants?.[0]).toEqual({
+      sku: "SKU is required.",
+      costPrice: "Cost price is required.",
+      sellingPrice: "Selling price is required.",
+    })
   })
 
-  it("rejects a decimal selling price", () => {
-    expect(
-      validateProductForm(validValues({ sellingPrice: "12.5" })).sellingPrice,
-    ).toBe("Enter a whole number.")
+  it("requires at least one variant", () => {
+    const errors = validateProductForm(validValues({ variants: [] }))
+
+    expect(errors.variantsMessage).toBe("Add at least one variant.")
   })
 
-  it("rejects a negative selling price", () => {
-    expect(
-      validateProductForm(validValues({ sellingPrice: "-1" })).sellingPrice,
-    ).toBe("Enter a whole number.")
+  it("accepts prices with up to two decimals", () => {
+    const errors = validateProductForm(
+      validValues({
+        variants: [
+          {
+            sku: "SKU-1",
+            costPrice: "10.5",
+            sellingPrice: "12.50",
+            barcode: "",
+          },
+        ],
+      }),
+    )
+
+    expect(errors).toEqual({})
   })
 
-  it("rejects a non-numeric cost price", () => {
-    expect(
-      validateProductForm(validValues({ costPrice: "abc" })).costPrice,
-    ).toBe("Enter a whole number.")
+  it.each(["12.555", "-1", "abc"])("rejects the price %s", (price) => {
+    const errors = validateProductForm(
+      validValues({
+        variants: [
+          { sku: "SKU-1", costPrice: price, sellingPrice: price, barcode: "" },
+        ],
+      }),
+    )
+
+    expect(errors.variants?.[0]?.costPrice).toBe(
+      "Use a number with at most 2 decimals.",
+    )
+    expect(errors.variants?.[0]?.sellingPrice).toBe(
+      "Use a number with at most 2 decimals.",
+    )
   })
 
-  it("rejects an http image URL", () => {
-    expect(
-      validateProductForm(
-        validValues({ imageUrl: "http://example.com/a.png" }),
-      ).imageUrl,
-    ).toBe("Use an https:// or ftp:// URL.")
+  it("flags a duplicate SKU on the later variant, ignoring case and spaces", () => {
+    const errors = validateProductForm(
+      validValues({
+        variants: [
+          { sku: "ABC", costPrice: "1.00", sellingPrice: "2.00", barcode: "" },
+          {
+            sku: "  abc ",
+            costPrice: "1.00",
+            sellingPrice: "2.00",
+            barcode: "",
+          },
+        ],
+      }),
+    )
+
+    expect(errors.variants?.[0]?.sku).toBeUndefined()
+    expect(errors.variants?.[1]?.sku).toBe(
+      "This SKU is used by another variant.",
+    )
   })
 
-  it("accepts an https image URL", () => {
-    expect(
-      validateProductForm(
-        validValues({ imageUrl: "https://example.com/a.png" }),
-      ).imageUrl,
-    ).toBeUndefined()
-  })
+  it("accepts a fully valid multi-variant form", () => {
+    const errors = validateProductForm(
+      validValues({
+        variants: [
+          { sku: "SKU-S", costPrice: "8.00", sellingPrice: "15.00", barcode: "" },
+          {
+            sku: "SKU-M",
+            costPrice: "8.00",
+            sellingPrice: "15.00",
+            barcode: "123",
+          },
+        ],
+      }),
+    )
 
-  it("rejects a malformed image URL", () => {
-    expect(
-      validateProductForm(validValues({ imageUrl: "not a url" })).imageUrl,
-    ).toBe("Use an https:// or ftp:// URL.")
-  })
-
-  it("rejects an unknown status", () => {
-    expect(
-      validateProductForm(
-        validValues({ status: "draft" as ProductFormValues["status"] }),
-      ).status,
-    ).toBe("Status is invalid.")
-  })
-
-  it("accepts a fully valid form", () => {
-    expect(validateProductForm(validValues())).toEqual({})
+    expect(errors).toEqual({})
   })
 })
 
 describe("toProductInput", () => {
-  it("trims text and turns empty optional fields into null", () => {
+  it("trims text, converts ids and turns empty optionals into null", () => {
     expect(
       toProductInput(
         validValues({
           name: "  Ada  ",
-          brand: "  ",
-          imageUrl: "",
+          brandId: " 1 ",
+          unitId: "2",
+          categoryId: "",
           description: "  ",
+          variants: [
+            {
+              sku: " SKU-1 ",
+              costPrice: " 10.00 ",
+              sellingPrice: "12.00",
+              barcode: "  ",
+            },
+          ],
         }),
       ),
     ).toEqual({
       name: "Ada",
-      sku: "SKU-1",
-      brand: null,
-      unit: "kg",
-      sellingPrice: "12",
-      costPrice: "10",
-      imageUrl: null,
+      brandId: 1,
+      unitId: 2,
+      categoryId: null,
       description: null,
-      status: "active",
+      variants: [
+        {
+          sku: "SKU-1",
+          costPrice: "10.00",
+          sellingPrice: "12.00",
+          barcode: null,
+        },
+      ],
+    })
+  })
+
+  it("keeps a category when one is selected", () => {
+    expect(toProductInput(validValues({ categoryId: "3" })).categoryId).toBe(3)
+  })
+})
+
+describe("toProductUpdateInput", () => {
+  it("omits variants because PUT cannot change them", () => {
+    expect(toProductUpdateInput(validValues())).toEqual({
+      name: "Product",
+      brandId: 1,
+      unitId: 2,
+      categoryId: null,
+      description: null,
     })
   })
 })
 
 describe("toProductFormValues", () => {
-  it("turns null fields into empty strings and keeps the status", () => {
+  it("reads the nested attributes", () => {
     expect(toProductFormValues(product)).toEqual({
       name: "Ada",
-      sku: "SKU-7",
-      brand: "",
-      unit: "kg",
-      sellingPrice: "12",
-      costPrice: "10",
-      imageUrl: "",
+      brandId: "1",
+      unitId: "2",
+      categoryId: "3",
       description: "",
-      status: "archive",
+      variants: [
+        { sku: "SKU-7", costPrice: "10.00", sellingPrice: "12.00", barcode: "" },
+      ],
+    })
+  })
+
+  it("turns a missing category into an empty selection", () => {
+    const noCategory: Product = {
+      ...product,
+      attributes: { ...product.attributes, category: null },
+    }
+
+    expect(toProductFormValues(noCategory).categoryId).toBe("")
+  })
+})
+
+describe("createEmptyVariant", () => {
+  it("returns blank strings", () => {
+    expect(createEmptyVariant()).toEqual({
+      sku: "",
+      costPrice: "",
+      sellingPrice: "",
+      barcode: "",
     })
   })
 })

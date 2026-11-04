@@ -1,58 +1,111 @@
-import type { Product, ProductInput, ProductStatus } from "@/services/products-api"
+import type {
+  Product,
+  ProductInput,
+  ProductUpdateInput,
+} from "@/services/products-api"
+
+export interface VariantFormValues {
+  sku: string
+  costPrice: string
+  sellingPrice: string
+  barcode: string
+}
 
 export interface ProductFormValues {
   name: string
-  sku: string
-  brand: string
-  unit: string
-  sellingPrice: string
-  costPrice: string
-  imageUrl: string
+  brandId: string
+  unitId: string
+  categoryId: string
   description: string
-  status: ProductStatus
+  variants: VariantFormValues[]
 }
 
-export type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>
+export interface VariantFormErrors {
+  sku?: string
+  costPrice?: string
+  sellingPrice?: string
+  barcode?: string
+}
 
-const WHOLE_NUMBER = /^\d+$/
-const ALLOWED_STATUSES: ProductStatus[] = ["active", "archive"]
+export interface ProductFormErrors {
+  name?: string
+  brandId?: string
+  unitId?: string
+  categoryId?: string
+  description?: string
+  variantsMessage?: string
+  variants?: VariantFormErrors[]
+}
+
+const MONEY = /^\d{1,10}(\.\d{1,2})?$/
+
+export function createEmptyVariant(): VariantFormValues {
+  return { sku: "", costPrice: "", sellingPrice: "", barcode: "" }
+}
 
 export function createEmptyProductForm(): ProductFormValues {
   return {
     name: "",
-    sku: "",
-    brand: "",
-    unit: "",
-    sellingPrice: "",
-    costPrice: "",
-    imageUrl: "",
+    brandId: "",
+    unitId: "",
+    categoryId: "",
     description: "",
-    status: "active",
+    variants: [createEmptyVariant()],
   }
 }
 
 export function toProductFormValues(product: Product): ProductFormValues {
   return {
-    name: product.name,
-    sku: product.sku,
-    brand: product.brand ?? "",
-    unit: product.unit,
-    sellingPrice: product.sellingPrice,
-    costPrice: product.costPrice,
-    imageUrl: product.imageUrl ?? "",
-    description: product.description ?? "",
-    status: product.status,
+    name: product.attributes.name,
+    brandId: String(product.attributes.brand.id),
+    unitId: String(product.attributes.unit.id),
+    categoryId: product.attributes.category
+      ? String(product.attributes.category.id)
+      : "",
+    description: product.attributes.description ?? "",
+    variants: product.attributes.variants.map((variant) => ({
+      sku: variant.sku,
+      costPrice: variant.costPrice ?? "",
+      sellingPrice: variant.sellingPrice,
+      barcode: variant.barcode ?? "",
+    })),
   }
 }
 
-function isAllowedImageUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
+function validateVariant(
+  variant: VariantFormValues,
+  seenSkus: Set<string>,
+): VariantFormErrors {
+  const errors: VariantFormErrors = {}
+  const sku = variant.sku.trim()
 
-    return url.protocol === "https:" || url.protocol === "ftp:"
-  } catch {
-    return false
+  if (!sku) {
+    errors.sku = "SKU is required."
+  } else {
+    const key = sku.toLowerCase()
+
+    if (seenSkus.has(key)) {
+      errors.sku = "This SKU is used by another variant."
+    } else {
+      seenSkus.add(key)
+    }
   }
+
+  const costPrice = variant.costPrice.trim()
+  if (!costPrice) {
+    errors.costPrice = "Cost price is required."
+  } else if (!MONEY.test(costPrice)) {
+    errors.costPrice = "Use a number with at most 2 decimals."
+  }
+
+  const sellingPrice = variant.sellingPrice.trim()
+  if (!sellingPrice) {
+    errors.sellingPrice = "Selling price is required."
+  } else if (!MONEY.test(sellingPrice)) {
+    errors.sellingPrice = "Use a number with at most 2 decimals."
+  }
+
+  return errors
 }
 
 export function validateProductForm(
@@ -61,29 +114,21 @@ export function validateProductForm(
   const errors: ProductFormErrors = {}
 
   if (!values.name.trim()) errors.name = "Name is required."
-  if (!values.sku.trim()) errors.sku = "SKU is required."
-  if (!values.unit.trim()) errors.unit = "Unit is required."
+  if (!values.brandId.trim()) errors.brandId = "Select a brand."
+  if (!values.unitId.trim()) errors.unitId = "Select a unit."
 
-  if (!values.sellingPrice.trim()) {
-    errors.sellingPrice = "Selling price is required."
-  } else if (!WHOLE_NUMBER.test(values.sellingPrice.trim())) {
-    errors.sellingPrice = "Enter a whole number."
+  if (values.variants.length === 0) {
+    errors.variantsMessage = "Add at least one variant."
+    return errors
   }
 
-  if (!values.costPrice.trim()) {
-    errors.costPrice = "Cost price is required."
-  } else if (!WHOLE_NUMBER.test(values.costPrice.trim())) {
-    errors.costPrice = "Enter a whole number."
-  }
+  const seenSkus = new Set<string>()
+  const variantErrors = values.variants.map((variant) =>
+    validateVariant(variant, seenSkus),
+  )
 
-  const imageUrl = values.imageUrl.trim()
-
-  if (imageUrl && !isAllowedImageUrl(imageUrl)) {
-    errors.imageUrl = "Use an https:// or ftp:// URL."
-  }
-
-  if (!ALLOWED_STATUSES.includes(values.status)) {
-    errors.status = "Status is invalid."
+  if (variantErrors.some((variant) => Object.keys(variant).length > 0)) {
+    errors.variants = variantErrors
   }
 
   return errors
@@ -95,16 +140,36 @@ function toNullable(value: string): string | null {
   return trimmed === "" ? null : trimmed
 }
 
+function toId(value: string): number {
+  return Number.parseInt(value.trim(), 10)
+}
+
 export function toProductInput(values: ProductFormValues): ProductInput {
   return {
     name: values.name.trim(),
-    sku: values.sku.trim(),
-    brand: toNullable(values.brand),
-    unit: values.unit.trim(),
-    sellingPrice: values.sellingPrice.trim(),
-    costPrice: values.costPrice.trim(),
-    imageUrl: toNullable(values.imageUrl),
+    brandId: toId(values.brandId),
+    unitId: toId(values.unitId),
+    categoryId: values.categoryId.trim() === "" ? null : toId(values.categoryId),
     description: toNullable(values.description),
-    status: values.status,
+    variants: values.variants.map((variant) => ({
+      sku: variant.sku.trim(),
+      costPrice: variant.costPrice.trim(),
+      sellingPrice: variant.sellingPrice.trim(),
+      barcode: toNullable(variant.barcode),
+    })),
+  }
+}
+
+export function toProductUpdateInput(
+  values: ProductFormValues,
+): ProductUpdateInput {
+  const input = toProductInput(values)
+
+  return {
+    name: input.name,
+    brandId: input.brandId,
+    unitId: input.unitId,
+    categoryId: input.categoryId,
+    description: input.description,
   }
 }
