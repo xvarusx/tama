@@ -13,10 +13,11 @@ to the nginx gateway. The target is configured with `VITE_API_PROXY_TARGET`
 | --------------------- | -------------------- |
 | `/api/authenticator/*` | authentication-service |
 | `/api/contact*`        | contact-service        |
-| `/api/product*`        | product-service        |
+| `/api/product/*`       | product-service (`/api/v1/*`) |
 | `/api/inventory*`      | inventory-service      |
 
 The gateway routes are defined in `infrastructure/gateway/nginx.conf`.
+`/api/product/*` is rewritten to the product service's `/api/v1/*` namespace.
 
 Currently, two official plugins are available:
 
