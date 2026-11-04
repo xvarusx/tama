@@ -145,7 +145,13 @@ describe("updateProduct", () => {
       response({ status: "success", data: product }),
     )
 
-    const { variants: _variants, ...fields } = input
+    const fields = {
+      name: input.name,
+      brandId: input.brandId,
+      unitId: input.unitId,
+      categoryId: input.categoryId,
+      description: input.description,
+    }
     await expect(updateProduct(7, fields)).resolves.toEqual(product)
 
     expect(api.put).toHaveBeenCalledWith("/api/product/products/7", fields)
