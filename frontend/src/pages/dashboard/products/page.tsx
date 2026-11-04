@@ -73,14 +73,18 @@ export default function ProductsPage() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
 
   useEffect(() => {
+    const nextSearch = searchInput.trim()
+
+    if (nextSearch === search) return
+
     const timer = window.setTimeout(() => {
       beginLoading()
-      setSearch(searchInput.trim())
+      setSearch(nextSearch)
       setPage(1)
     }, 300)
 
     return () => window.clearTimeout(timer)
-  }, [searchInput])
+  }, [searchInput, search])
 
   useEffect(() => {
     let cancelled = false

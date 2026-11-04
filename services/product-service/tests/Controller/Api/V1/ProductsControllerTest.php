@@ -170,6 +170,11 @@ final class ProductsControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
 
+        // PHP turns a Location header on a 200 into a 302, which breaks SPA
+        // clients that follow redirects. A 200 update must use Content-Location.
+        self::assertFalse($this->client->getResponse()->headers->has('Location'));
+        self::assertTrue($this->client->getResponse()->headers->has('Content-Location'));
+
         $response = json_decode($this->client->getResponse()->getContent(), true);
 
         self::assertSame('success', $response['status']);

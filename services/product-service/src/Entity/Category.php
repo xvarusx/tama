@@ -3,29 +3,31 @@
 namespace App\Entity;
 
 use App\Repository\CategoryRepository;
+use App\Traits\ShareableTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
+#[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 class Category
 {
+    use ShareableTrait;
     #[Groups(['product:read'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(['product:read'])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt = null;
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $slug = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $updatedAt = null;
+    #[ORM\Column(options: ['default' => 0])]
+    private int $position = 0;
 
     /**
      * @var Collection<int, Product>
@@ -33,9 +35,16 @@ class Category
     #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'category')]
     private Collection $products;
 
-    public function __construct()
+    public function __construct(?string $name = null, ?string $slug = null, int $position = 0)
     {
         $this->products = new ArrayCollection();
+        if (null !== $name) {
+            $this->name = $name;
+        }
+        if (null !== $slug) {
+            $this->slug = $slug;
+        }
+        $this->position = $position;
     }
 
     public function getId(): ?int
@@ -55,26 +64,9 @@ class Category
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function rename(string $name): static
     {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
+        $this->name = $name;
 
         return $this;
     }
@@ -87,24 +79,40 @@ class Category
         return $this->products;
     }
 
-    public function addProduct(Product $product): static
+    public function getSlug(): ?string
     {
-        if (!$this->products->contains($product)) {
-            $this->products->add($product);
-            $product->setCategory($this);
-        }
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
 
         return $this;
     }
 
-    public function removeProduct(Product $product): static
+    public function changeSlug(string $slug): static
     {
-        if ($this->products->removeElement($product)) {
-            // set the owning side to null (unless already changed)
-            if ($product->getCategory() === $this) {
-                $product->setCategory(null);
-            }
-        }
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    public function moveTo(int $position): static
+    {
+        $this->position = $position;
+
+        return $this;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
 
         return $this;
     }

@@ -3,90 +3,68 @@
 namespace App\Entity;
 
 use App\Repository\ProductRepository;
+use App\Traits\ShareableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
+#[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
-#[UniqueEntity(fields: ['sku'])]
 class Product
 {
-    public const STATUS = ['active', 'archive'];
-    #[Groups(['product:read'])]
+    use ShareableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(['product:read'])]
-    #[ORM\Column(length: 255)]
-    private ?string $sku = null;
-
-    #[Groups(['product:read'])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[Groups(['product:read'])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[Groups(['product:read'])]
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $brand = null;
+    #[ORM\Version]
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
+    private int $version = 1;
 
-    #[Groups(['product:read'])]
-    #[ORM\Column(length: 255)]
-    private ?string $unit = null;
-
-    #[Groups(['product:read'])]
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0)]
-    private ?string $sellingPrice = null;
-
-    #[Groups(['product:read'])]
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0)]
-    private ?string $costPrice = null;
-
-    #[Groups(['product:read'])]
-    #[Assert\Url(
-        protocols: ['https', 'ftp'],
-    )]
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $imageUrl = null;
-
-    #[Groups(['product:read'])]
-    #[Assert\Choice(choices: Product::STATUS, message: 'status is not valid')]
-    #[ORM\Column]
-    private ?string $status = null;
-
-    #[Groups(['product:read'])]
-    #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt = null;
-
-    #[Groups(['product:read'])]
-    #[ORM\Column]
-    private ?\DateTimeImmutable $updatedAt = null;
-
-    #[Groups(['product:read'])]
     #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Category $category = null;
+
+    /** @var Collection<int, ProductMedia> */
+    #[ORM\OneToMany(targetEntity: ProductMedia::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    private Collection $media;
+
+    /**
+     * @var Collection<int, ProductVariant>
+     */
+    #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'product', orphanRemoval: true, cascade: ['persist'])]
+    private Collection $productVariant;
+
+    #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Unit $unit = null;
+
+    #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Brand $brand = null;
+
+    public function __construct(?string $name = null, ?Brand $brand = null, ?Unit $unit = null)
+    {
+        $this->name = $name;
+        $this->brand = $brand;
+        $this->unit = $unit;
+        $this->productVariant = new ArrayCollection();
+        $this->media = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getSku(): ?string
-    {
-        return $this->sku;
-    }
-
-    public function setSku(?string $sku): static
-    {
-        $this->sku = $sku;
-
-        return $this;
     }
 
     public function getName(): ?string
@@ -113,102 +91,6 @@ class Product
         return $this;
     }
 
-    public function getBrand(): ?string
-    {
-        return $this->brand;
-    }
-
-    public function setBrand(?string $brand): static
-    {
-        $this->brand = $brand;
-
-        return $this;
-    }
-
-    public function getUnit(): ?string
-    {
-        return $this->unit;
-    }
-
-    public function setUnit(string $unit): static
-    {
-        $this->unit = $unit;
-
-        return $this;
-    }
-
-    public function getSellingPrice(): ?string
-    {
-        return $this->sellingPrice;
-    }
-
-    public function setSellingPrice(string $sellingPrice): static
-    {
-        $this->sellingPrice = $sellingPrice;
-
-        return $this;
-    }
-
-    public function getCostPrice(): ?string
-    {
-        return $this->costPrice;
-    }
-
-    public function setCostPrice(string $costPrice): static
-    {
-        $this->costPrice = $costPrice;
-
-        return $this;
-    }
-
-    public function getImageUrl(): ?string
-    {
-        return $this->imageUrl;
-    }
-
-    public function setImageUrl(?string $imageUrl): static
-    {
-        $this->imageUrl = $imageUrl;
-
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(?string $status): static
-    {
-        $this->status = $status;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
     public function getCategory(): ?Category
     {
         return $this->category;
@@ -217,6 +99,88 @@ class Product
     public function setCategory(?Category $category): static
     {
         $this->category = $category;
+
+        return $this;
+    }
+
+    public function getVersion(): int
+    {
+        return $this->version;
+    }
+
+    /**
+     * @return Collection<int, ProductVariant>
+     */
+    public function getProductVariant(): Collection
+    {
+        return $this->productVariant;
+    }
+
+    public function addProductVariant(ProductVariant $productVariant): static
+    {
+        if (!$this->productVariant->contains($productVariant)) {
+            $this->productVariant->add($productVariant);
+            $productVariant->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductVariant(ProductVariant $productVariant): static
+    {
+        if ($this->productVariant->removeElement($productVariant)) {
+            // set the owning side to null (unless already changed)
+            if ($productVariant->getProduct() === $this) {
+                $productVariant->setProduct(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /** @return Collection<int, ProductMedia> */
+    public function getMedia(): Collection
+    {
+        return $this->media;
+    }
+
+    public function addMedia(ProductMedia $media): static
+    {
+        if (!$this->media->contains($media)) {
+            $this->media->add($media);
+            $media->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMedia(ProductMedia $media): static
+    {
+        $this->media->removeElement($media);
+
+        return $this;
+    }
+
+    public function getUnit(): ?Unit
+    {
+        return $this->unit;
+    }
+
+    public function setUnit(?Unit $unit): static
+    {
+        $this->unit = $unit;
+
+        return $this;
+    }
+
+    public function getBrand(): ?Brand
+    {
+        return $this->brand;
+    }
+
+    public function setBrand(?Brand $brand): static
+    {
+        $this->brand = $brand;
 
         return $this;
     }

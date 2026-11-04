@@ -17,7 +17,8 @@ framework:
         routing:
             # Route your messages to the transports
             # 'App\Message\YourMessage': async
-            App\Message\ProductUpdated: async
+            App\Event\ProductCreatedV1: async
+            App\Event\ProductUpdatedV1: async
 
 when@test:
     framework:
