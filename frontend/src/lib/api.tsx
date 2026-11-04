@@ -28,10 +28,19 @@ export function getApiErrorMessage(
 ): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as
-      | { error?: string; message?: string }
+      | {
+          error?: string | { message?: string }
+          message?: string
+          detail?: string
+        }
       | undefined;
 
-    return data?.error ?? data?.message ?? error.message;
+    if (typeof data?.error === "string") return data.error;
+    if (data?.error && typeof data.error === "object") {
+      return data.error.message ?? error.message;
+    }
+
+    return data?.detail ?? data?.message ?? error.message;
   }
 
   if (error instanceof Error) return error.message;

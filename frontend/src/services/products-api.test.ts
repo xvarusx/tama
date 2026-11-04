@@ -2,12 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import {
   createProduct,
+  deleteProduct,
+  getBrands,
+  getCategories,
+  getProduct,
   getProducts,
-  getProductsTotal,
-  setProductStatus,
+  getUnits,
   updateProduct,
   type Product,
   type ProductInput,
+  type ProductPage,
 } from "./products-api"
 
 vi.mock("@/lib/api", () => ({
@@ -21,162 +25,171 @@ vi.mock("@/lib/api", () => ({
 
 const response = (data: unknown) => ({ data }) as never
 
-const makeProducts = (count: number): Product[] =>
-  Array.from({ length: count }, (_, index) => ({
-    id: index + 1,
-    sku: `SKU-${index + 1}`,
-    name: `Product ${index + 1}`,
-    description: null,
-    brand: null,
-    unit: "kg",
-    sellingPrice: "12",
-    costPrice: "10",
-    imageUrl: null,
-    status: "active",
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-    category: null,
-  }))
-
-const input: ProductInput = {
-  sku: "SKU-7",
-  name: "Ada",
-  description: null,
-  brand: null,
-  unit: "kg",
-  sellingPrice: "12",
-  costPrice: "10",
-  imageUrl: null,
-  status: "active",
-}
-
 const product: Product = {
   id: 7,
-  sku: "SKU-7",
-  name: "Ada",
-  description: null,
-  brand: null,
-  unit: "kg",
-  sellingPrice: "12",
-  costPrice: "10",
-  imageUrl: null,
-  status: "active",
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: "2026-01-01T00:00:00.000Z",
-  category: null,
+  type: "product",
+  attributes: {
+    name: "Ada",
+    description: null,
+    brand: { id: 1, name: "Acme" },
+    unit: { id: 2, code: "pcs" },
+    category: null,
+    variants: [
+      {
+        id: 11,
+        sku: "SKU-7",
+        barcode: null,
+        options: null,
+        sellingPrice: "12.00",
+        costPrice: "10.00",
+      },
+    ],
+    createdAt: "2026-01-01T00:00:00+00:00",
+    updatedAt: "2026-01-01T00:00:00+00:00",
+  },
 }
 
-const pageCall = (page: number) => [
-  "/api/product",
-  { params: { page, limit: 100 } },
-]
+const pagination = {
+  currentPage: 2,
+  totalPages: 3,
+  pageSize: 25,
+  totalItems: 51,
+  links: { self: "/api/v1/products?page=2" },
+}
+
+const page: ProductPage = { items: [product], pagination }
+
+const input: ProductInput = {
+  name: "Ada",
+  brandId: 1,
+  unitId: 2,
+  categoryId: null,
+  description: null,
+  variants: [
+    { sku: "SKU-7", costPrice: "10.00", sellingPrice: "12.00", barcode: null },
+  ],
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
 describe("getProducts", () => {
-  it("requests a page and returns the array", async () => {
-    vi.mocked(api.get).mockResolvedValueOnce(response([product]))
+  it("requests a page and unwraps the envelope", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({ status: "success", data: [product], pagination }),
+    )
 
-    await expect(getProducts(2, 25)).resolves.toEqual([product])
+    await expect(
+      getProducts({ page: 2, pageSize: 25, search: "mon" }),
+    ).resolves.toEqual(page)
 
-    expect(api.get).toHaveBeenCalledWith("/api/product", {
-      params: { page: 2, limit: 25 },
+    expect(api.get).toHaveBeenCalledWith("/api/product/products", {
+      params: { page: 2, pageSize: 25, search: "mon" },
     })
+  })
+
+  it("omits empty filters", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({ status: "success", data: [], pagination }),
+    )
+
+    await getProducts({ page: 1, pageSize: 20 })
+
+    expect(api.get).toHaveBeenCalledWith("/api/product/products", {
+      params: { page: 1, pageSize: 20 },
+    })
+  })
+
+  it("rejects an error envelope", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({
+        status: "error",
+        error: { code: "INTERNAL_ERROR", message: "Boom" },
+      }),
+    )
+
+    await expect(getProducts({ page: 1, pageSize: 20 })).rejects.toThrow(
+      "Boom",
+    )
   })
 })
 
-describe("getProductsTotal", () => {
-  it("sums the last partial page", async () => {
-    vi.mocked(api.get)
-      .mockResolvedValueOnce(response(makeProducts(100)))
-      .mockResolvedValueOnce(response(makeProducts(25)))
-
-    await expect(getProductsTotal()).resolves.toBe(125)
-
-    expect(api.get).toHaveBeenNthCalledWith(1, ...pageCall(1))
-    expect(api.get).toHaveBeenNthCalledWith(2, ...pageCall(2))
-  })
-
-  it("counts a full page and stops on the empty one", async () => {
-    vi.mocked(api.get)
-      .mockResolvedValueOnce(response(makeProducts(100)))
-      .mockResolvedValueOnce(response([]))
-
-    await expect(getProductsTotal()).resolves.toBe(100)
-
-    expect(api.get).toHaveBeenNthCalledWith(1, ...pageCall(1))
-    expect(api.get).toHaveBeenNthCalledWith(2, ...pageCall(2))
-  })
-
-  it("returns zero when the first page is empty", async () => {
-    vi.mocked(api.get).mockResolvedValueOnce(response([]))
-
-    await expect(getProductsTotal()).resolves.toBe(0)
-
-    expect(api.get).toHaveBeenCalledTimes(1)
-    expect(api.get).toHaveBeenCalledWith(...pageCall(1))
-  })
-
-  it("fails after the safety page limit instead of walking forever", async () => {
-    vi.mocked(api.get).mockResolvedValue(response(makeProducts(100)))
-
-    await expect(getProductsTotal()).rejects.toThrow(
-      "Unable to determine product total.",
+describe("getProduct", () => {
+  it("fetches one product", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({ status: "success", data: product }),
     )
-    expect(api.get).toHaveBeenCalledTimes(1000)
+
+    await expect(getProduct(7)).resolves.toEqual(product)
+
+    expect(api.get).toHaveBeenCalledWith("/api/product/products/7")
   })
 })
 
 describe("createProduct", () => {
-  it("posts the input and returns the created product", async () => {
-    vi.mocked(api.post).mockResolvedValueOnce(response(product))
-
-    await expect(createProduct(input)).resolves.toBe(product)
-
-    expect(api.post).toHaveBeenCalledWith("/api/product/", input)
-  })
-
-  it("rejects a 2xx body that carries an error instead of a product", async () => {
+  it("posts the product with its variants and unwraps it", async () => {
     vi.mocked(api.post).mockResolvedValueOnce(
-      response({ error: "Invalid image URL" }),
+      response({ status: "success", data: product }),
     )
 
-    await expect(createProduct(input)).rejects.toThrow("Invalid image URL")
+    await expect(createProduct(input)).resolves.toEqual(product)
+
+    expect(api.post).toHaveBeenCalledWith("/api/product/products", input)
   })
 })
 
 describe("updateProduct", () => {
-  it("puts the input and returns the updated product", async () => {
-    vi.mocked(api.put).mockResolvedValueOnce(response(product))
+  it("puts only the product fields (variants are immutable)", async () => {
+    vi.mocked(api.put).mockResolvedValueOnce(
+      response({ status: "success", data: product }),
+    )
 
-    await expect(updateProduct(7, input)).resolves.toBe(product)
+    const { variants: _variants, ...fields } = input
+    await expect(updateProduct(7, fields)).resolves.toEqual(product)
 
-    expect(api.put).toHaveBeenCalledWith("/api/product/7", input)
+    expect(api.put).toHaveBeenCalledWith("/api/product/products/7", fields)
   })
 })
 
-describe("setProductStatus", () => {
-  it("re-sends the full product with the new status", async () => {
-    const archived: Product = { ...product, status: "archive" }
-    vi.mocked(api.put).mockResolvedValueOnce(response(archived))
+describe("deleteProduct", () => {
+  it("deletes the product", async () => {
+    vi.mocked(api.delete).mockResolvedValueOnce(response(undefined))
 
-    await expect(setProductStatus(product, "archive")).resolves.toBe(archived)
+    await expect(deleteProduct(7)).resolves.toBeUndefined()
 
-    expect(api.put).toHaveBeenCalledWith(
-      "/api/product/7",
-      {
-        sku: product.sku,
-        name: product.name,
-        description: product.description,
-        brand: product.brand,
-        unit: product.unit,
-        sellingPrice: product.sellingPrice,
-        costPrice: product.costPrice,
-        imageUrl: product.imageUrl,
-        status: "archive",
-      },
+    expect(api.delete).toHaveBeenCalledWith("/api/product/products/7")
+  })
+})
+
+describe("reference data", () => {
+  it("loads brands", async () => {
+    const brands = [{ id: 1, name: "Acme", slug: "acme" }]
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({ status: "success", data: brands }),
     )
+
+    await expect(getBrands()).resolves.toEqual(brands)
+    expect(api.get).toHaveBeenCalledWith("/api/product/brands")
+  })
+
+  it("loads units", async () => {
+    const units = [{ id: 2, code: "pcs", allowDecimal: false }]
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({ status: "success", data: units }),
+    )
+
+    await expect(getUnits()).resolves.toEqual(units)
+    expect(api.get).toHaveBeenCalledWith("/api/product/units")
+  })
+
+  it("loads categories", async () => {
+    const categories = [{ id: 3, name: "Monitors", slug: "monitors" }]
+    vi.mocked(api.get).mockResolvedValueOnce(
+      response({ status: "success", data: categories }),
+    )
+
+    await expect(getCategories()).resolves.toEqual(categories)
+    expect(api.get).toHaveBeenCalledWith("/api/product/categories")
   })
 })

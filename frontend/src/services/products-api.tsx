@@ -1,129 +1,183 @@
-import { api } from "@/lib/api";
+import { api } from "@/lib/api"
 
-export const PRODUCT_STATUS = {
-  active: "Active",
-  archive: "Archived",
-} as const;
+export interface ProductBrand {
+  id: number
+  name: string
+  slug?: string
+}
 
-export type ProductStatus = keyof typeof PRODUCT_STATUS;
+export interface ProductUnit {
+  id: number
+  code: string
+  allowDecimal?: boolean
+}
 
 export interface ProductCategory {
-  id: number;
-  name: string;
+  id: number
+  name: string
+  slug?: string
+}
+
+export interface ProductVariant {
+  id: number
+  sku: string
+  barcode: string | null
+  options: Record<string, string> | null
+  sellingPrice: string
+  costPrice: string | null
 }
 
 export interface Product {
-  id: number;
-  sku: string;
-  name: string;
-  description: string | null;
-  brand: string | null;
-  unit: string;
-  sellingPrice: string;
-  costPrice: string;
-  imageUrl: string | null;
-  status: ProductStatus;
-  createdAt: string;
-  updatedAt: string;
-  category: ProductCategory | null;
+  id: number
+  type: "product"
+  attributes: {
+    name: string
+    description: string | null
+    brand: ProductBrand
+    unit: ProductUnit
+    category: ProductCategory | null
+    variants: ProductVariant[]
+    createdAt: string | null
+    updatedAt: string | null
+  }
+}
+
+export interface ProductPagination {
+  currentPage: number
+  totalPages: number
+  pageSize: number
+  totalItems: number
+  links: Record<string, string>
+}
+
+export interface ProductPage {
+  items: Product[]
+  pagination: ProductPagination
+}
+
+export interface ProductQuery {
+  page: number
+  pageSize: number
+  search?: string
+  categoryId?: number
+  brandId?: number
+}
+
+export interface VariantInput {
+  sku: string
+  costPrice: string
+  sellingPrice: string
+  barcode: string | null
 }
 
 export interface ProductInput {
-  sku: string;
-  name: string;
-  description: string | null;
-  brand: string | null;
-  unit: string;
-  sellingPrice: string;
-  costPrice: string;
-  imageUrl: string | null;
-  status: ProductStatus;
+  name: string
+  brandId: number
+  unitId: number
+  categoryId: number | null
+  description: string | null
+  variants: VariantInput[]
 }
 
-function logRequestError(action: string, error: unknown) {
-  console.error(action, error instanceof Error ? error.message : error);
+export type ProductUpdateInput = Omit<ProductInput, "variants">
+
+interface ApiEnvelope<T> {
+  status?: string
+  data?: T
+  pagination?: ProductPagination
+  error?: { code?: string; message?: string } | string
 }
 
-function ensureProduct(data: unknown): Product {
-  if (data && typeof data === "object" && "error" in data && !("id" in data)) {
-    throw new Error(String((data as { error: unknown }).error));
+function envelopeError(error: ApiEnvelope<unknown>["error"]): string {
+  if (typeof error === "string") return error
+  return error?.message ?? "The API returned an error."
+}
+
+function unwrap<T>(envelope: ApiEnvelope<T>): T {
+  if (envelope.status === "error") throw new Error(envelopeError(envelope.error))
+
+  if (envelope.data === undefined) {
+    throw new Error("The API returned an unexpected response.")
   }
 
-  return data as Product;
+  return envelope.data
 }
 
-export async function getProducts(
-  page: number,
-  limit: number,
-): Promise<Product[]> {
-  try {
-    const response = await api.get<Product[]>("/api/product", {
-      params: { page, limit },
-    });
+const BASE = "/api/product"
 
-    return response.data;
-  } catch (error) {
-    logRequestError("Failed to fetch products:", error);
-    throw error;
+export async function getProducts(query: ProductQuery): Promise<ProductPage> {
+  const params: Record<string, string | number> = {
+    page: query.page,
+    pageSize: query.pageSize,
+  }
+
+  const search = query.search?.trim()
+  if (search) params.search = search
+  if (query.categoryId) params.categoryId = query.categoryId
+  if (query.brandId) params.brandId = query.brandId
+
+  const response = await api.get<ApiEnvelope<Product[]>>(`${BASE}/products`, {
+    params,
+  })
+
+  const items = unwrap(response.data)
+
+  if (!response.data.pagination) {
+    throw new Error("The API returned an unexpected response.")
+  }
+
+  return {
+    items,
+    pagination: response.data.pagination,
   }
 }
 
-const PRODUCTS_PAGE_SIZE = 100;
-const MAX_PRODUCT_PAGES = 1_000;
+export async function getProduct(id: number): Promise<Product> {
+  const response = await api.get<ApiEnvelope<Product>>(`${BASE}/products/${id}`)
 
-export async function getProductsTotal(): Promise<number> {
-  let total = 0;
-
-  for (let page = 1; page <= MAX_PRODUCT_PAGES; page += 1) {
-    const products = await getProducts(page, PRODUCTS_PAGE_SIZE);
-    total += products.length;
-
-    if (products.length < PRODUCTS_PAGE_SIZE) return total;
-  }
-
-  throw new Error("Unable to determine product total.");
+  return unwrap(response.data)
 }
 
 export async function createProduct(input: ProductInput): Promise<Product> {
-  try {
-    const response = await api.post<Product>("/api/product/", input);
+  const response = await api.post<ApiEnvelope<Product>>(`${BASE}/products`, input)
 
-    return ensureProduct(response.data);
-  } catch (error) {
-    logRequestError("Failed to create product:", error);
-    throw error;
-  }
+  return unwrap(response.data)
 }
 
 export async function updateProduct(
   id: number,
-  input: ProductInput,
+  input: ProductUpdateInput,
 ): Promise<Product> {
-  try {
-    const response = await api.put<Product>(`/api/product/${id}`, input);
+  const response = await api.put<ApiEnvelope<Product>>(
+    `${BASE}/products/${id}`,
+    input,
+  )
 
-    return ensureProduct(response.data);
-  } catch (error) {
-    logRequestError("Failed to update product:", error);
-    throw error;
-  }
+  return unwrap(response.data)
 }
 
-export async function setProductStatus(
-  product: Product,
-  status: ProductStatus,
-): Promise<Product> {
-  return updateProduct(product.id, {
-    sku: product.sku,
-    name: product.name,
-    description: product.description,
-    brand: product.brand,
-    unit: product.unit,
-    sellingPrice: product.sellingPrice,
-    costPrice: product.costPrice,
-    imageUrl: product.imageUrl,
-    status,
-  });
+export async function deleteProduct(id: number): Promise<void> {
+  await api.delete(`${BASE}/products/${id}`)
 }
 
-export default getProducts;
+export async function getBrands(): Promise<ProductBrand[]> {
+  const response = await api.get<ApiEnvelope<ProductBrand[]>>(`${BASE}/brands`)
+
+  return unwrap(response.data)
+}
+
+export async function getUnits(): Promise<ProductUnit[]> {
+  const response = await api.get<ApiEnvelope<ProductUnit[]>>(`${BASE}/units`)
+
+  return unwrap(response.data)
+}
+
+export async function getCategories(): Promise<ProductCategory[]> {
+  const response = await api.get<ApiEnvelope<ProductCategory[]>>(
+    `${BASE}/categories`,
+  )
+
+  return unwrap(response.data)
+}
+
+export default getProducts
