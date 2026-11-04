@@ -211,6 +211,31 @@ final class ProductsControllerTest extends WebTestCase
         self::assertSame('SKU_ALREADY_EXISTS', $body['error']['code']);
     }
 
+    public function testCreateProductWithMultipleVariants(): void
+    {
+        $brand = $this->seedBrand('Variant Brand');
+        $unit = $this->seedUnit('pcs');
+
+        $this->client->request('POST', '/api/v1/products', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+            'name' => 'T-Shirt',
+            'brandId' => $brand->getId(),
+            'unitId' => $unit->getId(),
+            'variants' => [
+                ['sku' => 'TSHIRT-S', 'costPrice' => '8.00', 'sellingPrice' => '15.00', 'barcode' => '111'],
+                ['sku' => 'TSHIRT-M', 'costPrice' => '8.00', 'sellingPrice' => '15.00'],
+                ['sku' => 'TSHIRT-L', 'costPrice' => '9.50', 'sellingPrice' => '17.50'],
+            ],
+        ]));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        $variants = $body['data']['attributes']['variants'];
+
+        self::assertCount(3, $variants);
+        self::assertSame(['TSHIRT-S', 'TSHIRT-M', 'TSHIRT-L'], array_column($variants, 'sku'));
+        self::assertSame('17.50', $variants[2]['sellingPrice']);
+    }
+
     public function testDeleteProduct(): void
     {
         $product = $this->seedProduct('Delete Me');
