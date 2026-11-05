@@ -17,8 +17,7 @@ final class SkuGenerator
     public function __construct(
         private readonly SluggerInterface $slugger,
         private readonly EntityManagerInterface $em,
-    ) {
-    }
+    ) {}
 
     /**
      * @param array<string, mixed>|null $options e.g. ['size' => 'M', 'color' => 'black']
@@ -35,17 +34,17 @@ final class SkuGenerator
             $this->slugger->slug($productName)->lower()->toString(),
         ];
 
-        if (is_array($options) && [] !== $options) {
+        if (is_array($options) && $options !== []) {
             $parts[] = implode('-', array_map(
-                static fn (mixed $value, string $key): string => $this->slugger->slug((string) $key.'-'.(string) $value)->lower()->toString(),
+                fn(string $key, mixed $value): string => $this->slugger->slug((string)$key . '-' . (string)$value)->lower()->toString(),
                 array_keys($options),
                 array_values($options),
             ));
         }
 
-        $base = implode('-', array_filter($parts, static fn (string $p): bool => '' !== $p));
+        $base = implode('-', array_filter($parts, static fn(string $p): bool => $p !== ''));
 
-        if ('' === $base) {
+        if ($base === '') {
             $base = 'item';
         }
 
@@ -56,7 +55,7 @@ final class SkuGenerator
             ->from(\App\Entity\ProductVariant::class, 'v')
             ->where('v.sku = :base OR v.sku LIKE :like')
             ->setParameter('base', $base)
-            ->setParameter('like', $base.'-%');
+            ->setParameter('like', $base . '-%');
 
         $existing = $qb->getQuery()->getSingleColumnResult();
 

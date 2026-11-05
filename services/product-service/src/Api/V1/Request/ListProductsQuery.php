@@ -20,6 +20,5 @@ final class ListProductsQuery
         public readonly ?int $categoryId = null,
         #[Assert\Positive]
         public readonly ?int $brandId = null,
-    ) {
-    }
+    ) {}
 }

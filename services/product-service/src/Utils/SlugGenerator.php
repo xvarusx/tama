@@ -16,8 +16,7 @@ final class SlugGenerator
     public function __construct(
         private readonly SluggerInterface $slugger,
         private readonly EntityManagerInterface $em,
-    ) {
-    }
+    ) {}
 
     /** @param class-string $entityClass @param int|null $ignoreId the entity being updated, so it does not clash with itself */
     public function generate(string $text, string $entityClass, ?int $ignoreId = null): string
@@ -30,9 +29,9 @@ final class SlugGenerator
             ->from($entityClass, 'e')
             ->where('e.slug = :base OR e.slug LIKE :like')
             ->setParameter('base', $base)
-            ->setParameter('like', $base.'-%');
+            ->setParameter('like', $base . '-%');
 
-        if (null !== $ignoreId) {
+        if ($ignoreId !== null) {
             $qb->andWhere('e.id != :id')->setParameter('id', $ignoreId);
         }
 

@@ -11,6 +11,7 @@ use App\Api\V1\Request\UpdateProductRequest;
 use App\Entity\Product;
 use App\Hundler\Product\CreateProductHandler;
 use App\Hundler\Product\UpdateProductHandler;
+use App\Media\MediaStorage;
 use App\Repository\ProductRepository;
 use App\Utils\ApiResponse;
 use App\Utils\Pagination;
@@ -35,8 +36,8 @@ final class ProductsController extends AbstractController
         private readonly UpdateProductHandler $updateProduct,
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
-    ) {
-    }
+        private readonly MediaStorage $mediaStorage,
+    ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(Request $request, #[MapQueryString] ListProductsQuery $query = new ListProductsQuery()): JsonResponse
@@ -48,12 +49,12 @@ final class ProductsController extends AbstractController
             $query->categoryId,
             $query->brandId,
         );
-        $data = array_map(fn (Product $p) => $this->mapper->toResource($p), $items);
+        $data = array_map(fn(Product $p) => $this->mapper->toResource($p), $items);
         $pagination = Pagination::create(
             $query->page,
             $query->pageSize,
             $total,
-            fn (int $page): string => $this->generateUrl(
+            fn(int $page): string => $this->generateUrl(
                 'api_v1_product_list',
                 [...$request->query->all(), 'page' => $page],
                 UrlGeneratorInterface::ABSOLUTE_URL,
@@ -118,8 +119,15 @@ final class ProductsController extends AbstractController
     public function delete(int $id): Response
     {
         $product = $this->findOr404($id);
+        $media = $product->getMedia()->toArray();
+
         $this->em->remove($product);
         $this->em->flush();
+
+        // The DB rows are gone, so remove the files once the transaction committed.
+        foreach ($media as $item) {
+            $this->mediaStorage->delete($item);
+        }
 
         $this->cache->invalidateTags(['products']);
 

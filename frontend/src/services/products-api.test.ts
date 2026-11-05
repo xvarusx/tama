@@ -1,14 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
 import {
+  createBrand,
+  createCategory,
   createProduct,
   deleteProduct,
+  deleteProductMedia,
   getBrands,
   getCategories,
   getProduct,
   getProducts,
   getUnits,
+  productMediaUrl,
   updateProduct,
+  uploadProductMedia,
   type Product,
   type ProductInput,
   type ProductPage,
@@ -44,6 +49,7 @@ const product: Product = {
         costPrice: "10.00",
       },
     ],
+    media: [],
     createdAt: "2026-01-01T00:00:00+00:00",
     updatedAt: "2026-01-01T00:00:00+00:00",
   },
@@ -140,21 +146,14 @@ describe("createProduct", () => {
 })
 
 describe("updateProduct", () => {
-  it("puts only the product fields (variants are immutable)", async () => {
+  it("puts the product fields and its variants", async () => {
     vi.mocked(api.put).mockResolvedValueOnce(
       response({ status: "success", data: product }),
     )
 
-    const fields = {
-      name: input.name,
-      brandId: input.brandId,
-      unitId: input.unitId,
-      categoryId: input.categoryId,
-      description: input.description,
-    }
-    await expect(updateProduct(7, fields)).resolves.toEqual(product)
+    await expect(updateProduct(7, input)).resolves.toEqual(product)
 
-    expect(api.put).toHaveBeenCalledWith("/api/product/products/7", fields)
+    expect(api.put).toHaveBeenCalledWith("/api/product/products/7", input)
   })
 })
 
@@ -197,5 +196,67 @@ describe("reference data", () => {
 
     await expect(getCategories()).resolves.toEqual(categories)
     expect(api.get).toHaveBeenCalledWith("/api/product/categories")
+  })
+
+  it("creates a brand", async () => {
+    const brand = { id: 1, name: "Acme", slug: "acme" }
+    vi.mocked(api.post).mockResolvedValueOnce(
+      response({ status: "success", data: brand }),
+    )
+
+    await expect(createBrand("Acme")).resolves.toEqual(brand)
+    expect(api.post).toHaveBeenCalledWith("/api/product/brands", {
+      name: "Acme",
+    })
+  })
+
+  it("creates a category", async () => {
+    const category = { id: 3, name: "Monitors", slug: "monitors" }
+    vi.mocked(api.post).mockResolvedValueOnce(
+      response({ status: "success", data: category }),
+    )
+
+    await expect(createCategory("Monitors")).resolves.toEqual(category)
+    expect(api.post).toHaveBeenCalledWith("/api/product/categories", {
+      name: "Monitors",
+    })
+  })
+})
+
+describe("product media", () => {
+  it("builds an absolute url from the relative media path", () => {
+    expect(
+      productMediaUrl({ id: 5, url: "/media/5", kind: "image/png", position: 0 }),
+    ).toBe("/api/product/media/5")
+  })
+
+  it("uploads a file as multipart form data", async () => {
+    const media = {
+      id: 5,
+      url: "/media/5",
+      kind: "image/png",
+      position: 0,
+    }
+    vi.mocked(api.post).mockResolvedValueOnce(
+      response({ status: "success", data: media }),
+    )
+    const file = new File(["pixels"], "pixel.png", { type: "image/png" })
+
+    await expect(uploadProductMedia(7, file)).resolves.toEqual(media)
+
+    const [url, body, config] = vi.mocked(api.post).mock.calls[0]
+    expect(url).toBe("/api/product/products/7/media")
+    expect(body).toBeInstanceOf(FormData)
+    expect((body as FormData).get("file")).toBe(file)
+    expect(config).toEqual({
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+  })
+
+  it("deletes media", async () => {
+    vi.mocked(api.delete).mockResolvedValueOnce(response(undefined))
+
+    await expect(deleteProductMedia(5)).resolves.toBeUndefined()
+    expect(api.delete).toHaveBeenCalledWith("/api/product/media/5")
   })
 })

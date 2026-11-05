@@ -1,6 +1,11 @@
-import { MoreHorizontalIcon, PackageOpenIcon } from "lucide-react"
+import { EyeIcon, MoreHorizontalIcon, PackageOpenIcon } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
 
-import type { Product, ProductVariant } from "@/services/products-api"
+import {
+  productMediaUrl,
+  type Product,
+  type ProductVariant,
+} from "@/services/products-api"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -75,6 +80,8 @@ export default function ProductsTable({
   onEdit,
   onDelete,
 }: ProductsTableProps) {
+  const navigate = useNavigate()
+
   return (
     <div className="overflow-hidden border">
       <Table>
@@ -144,11 +151,34 @@ export default function ProductsTable({
               return (
                 <TableRow key={product.id}>
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{attributes.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {variantCount} variant{variantCount === 1 ? "" : "s"}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      {attributes.media.length > 0 ? (
+                        <Link
+                          to={`/dashboard/products/${product.id}`}
+                          className="block size-10 shrink-0 overflow-hidden border bg-muted"
+                        >
+                          <img
+                            src={productMediaUrl(attributes.media[0])}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        </Link>
+                      ) : (
+                        <div className="flex size-10 shrink-0 items-center justify-center border bg-muted text-muted-foreground">
+                          <PackageOpenIcon className="size-4" />
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <Link
+                          to={`/dashboard/products/${product.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {attributes.name}
+                        </Link>
+                        <span className="text-xs text-muted-foreground">
+                          {variantCount} variant{variantCount === 1 ? "" : "s"}
+                        </span>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{attributes.brand.name}</TableCell>
@@ -173,6 +203,14 @@ export default function ProductsTable({
                         }
                       />
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigate(`/dashboard/products/${product.id}`)
+                          }
+                        >
+                          <EyeIcon />
+                          View
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onEdit(product)}>
                           Edit
                         </DropdownMenuItem>

@@ -31,23 +31,24 @@ class ProductRepository extends ServiceEntityRepository
     public function search(int $page, int $pageSize, ?string $search = null, ?int $categoryId = null, ?int $brandId = null): array
     {
         $qb = $this->createQueryBuilder('p')
-            ->addSelect('b', 'u', 'c', 'v')
+            ->addSelect('b', 'u', 'c', 'v', 'm')
             ->join('p.brand', 'b')
             ->join('p.unit', 'u')
             ->leftJoin('p.category', 'c')
             ->leftJoin('p.productVariant', 'v')
+            ->leftJoin('p.media', 'm')
             ->orderBy('p.id', 'DESC')
             ->setFirstResult(($page - 1) * $pageSize)
             ->setMaxResults($pageSize);
 
-        if (null !== $search && '' !== $search) {
+        if ($search !== null && $search !== '') {
             $qb->andWhere('LOWER(p.name) LIKE :search')
-                ->setParameter('search', '%'.addcslashes(mb_strtolower($search), '%_\\').'%');
+                ->setParameter('search', '%' . addcslashes(mb_strtolower($search), '%_\\') . '%');
         }
-        if (null !== $categoryId) {
+        if ($categoryId !== null) {
             $qb->andWhere('c.id = :categoryId')->setParameter('categoryId', $categoryId);
         }
-        if (null !== $brandId) {
+        if ($brandId !== null) {
             $qb->andWhere('b.id = :brandId')->setParameter('brandId', $brandId);
         }
 

@@ -29,6 +29,5 @@ final class CreateProductRequest
         public readonly ?string $description = null,
         #[Assert\Positive]
         public readonly ?int $categoryId = null,
-    ) {
-    }
+    ) {}
 }

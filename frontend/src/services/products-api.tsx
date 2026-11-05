@@ -27,6 +27,14 @@ export interface ProductVariant {
   costPrice: string | null
 }
 
+export interface ProductMedia {
+  id: number
+  /** Relative to the product API base: /media/{id}. */
+  url: string
+  kind: string
+  position: number
+}
+
 export interface Product {
   id: number
   type: "product"
@@ -37,6 +45,7 @@ export interface Product {
     unit: ProductUnit
     category: ProductCategory | null
     variants: ProductVariant[]
+    media: ProductMedia[]
     createdAt: string | null
     updatedAt: string | null
   }
@@ -64,10 +73,12 @@ export interface ProductQuery {
 }
 
 export interface VariantInput {
+  id?: number
   sku: string
   costPrice: string
   sellingPrice: string
   barcode: string | null
+  options?: Record<string, string> | null
 }
 
 export interface ProductInput {
@@ -79,7 +90,7 @@ export interface ProductInput {
   variants: VariantInput[]
 }
 
-export type ProductUpdateInput = Omit<ProductInput, "variants">
+export type ProductUpdateInput = ProductInput
 
 interface ApiEnvelope<T> {
   status?: string
@@ -178,6 +189,47 @@ export async function getCategories(): Promise<ProductCategory[]> {
   )
 
   return unwrap(response.data)
+}
+
+export async function createBrand(name: string): Promise<ProductBrand> {
+  const response = await api.post<ApiEnvelope<ProductBrand>>(`${BASE}/brands`, {
+    name,
+  })
+
+  return unwrap(response.data)
+}
+
+export async function createCategory(name: string): Promise<ProductCategory> {
+  const response = await api.post<ApiEnvelope<ProductCategory>>(
+    `${BASE}/categories`,
+    { name },
+  )
+
+  return unwrap(response.data)
+}
+
+export function productMediaUrl(media: ProductMedia): string {
+  return `${BASE}${media.url}`
+}
+
+export async function uploadProductMedia(
+  productId: number,
+  file: File,
+): Promise<ProductMedia> {
+  const body = new FormData()
+  body.append("file", file)
+
+  const response = await api.post<ApiEnvelope<ProductMedia>>(
+    `${BASE}/products/${productId}/media`,
+    body,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  )
+
+  return unwrap(response.data)
+}
+
+export async function deleteProductMedia(mediaId: number): Promise<void> {
+  await api.delete(`${BASE}/media/${mediaId}`)
 }
 
 export default getProducts

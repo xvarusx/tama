@@ -29,7 +29,7 @@ final class ProductCreatedV1
             'unit' => ['id' => $product->getUnit()->getId(), 'code' => $product->getUnit()->getCode()],
             'category' => $category ? ['id' => $category->getId(), 'name' => $category->getName()] : null,
             'variants' => array_values(array_map(
-                static fn (ProductVariant $v): array => [
+                static fn(ProductVariant $v): array => [
                     'variantId' => $v->getId(),
                     'sku' => $v->getSku(),
                     'barcode' => $v->getBarcode(),

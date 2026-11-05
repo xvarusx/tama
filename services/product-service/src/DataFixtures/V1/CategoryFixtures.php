@@ -15,7 +15,7 @@ class CategoryFixtures extends Fixture
         foreach ([['monitors', 'Monitors', 1], ['keyboards', 'Keyboards', 2], ['accessories', 'Accessories', 3]] as [$slug, $name, $position]) {
             $category = new Category($name, $slug, $position);
             $manager->persist($category);
-            $this->addReference('category-'.$slug, $category);
+            $this->addReference('category-' . $slug, $category);
         }
 
         $manager->flush();

@@ -13,6 +13,5 @@ final class SaveUnitRequest
         #[Assert\Length(max: 55)]
         public readonly string $code,
         public readonly bool $allowDecimal = false,
-    ) {
-    }
+    ) {}
 }

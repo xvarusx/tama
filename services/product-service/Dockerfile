@@ -4,18 +4,22 @@ FROM php:8.4-fpm-alpine
 # Runtime libraries
 RUN apk add --no-cache \
     icu-libs \
-    rabbitmq-c
+    rabbitmq-c \
+    curl \
+    oniguruma
 
 # Install PHP extensions
 RUN set -eux; \
     apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
         icu-dev \
-        rabbitmq-c-dev; \
+        rabbitmq-c-dev \
+        oniguruma-dev; \
     docker-php-ext-install -j"$(nproc)" \
         intl \
         pdo_mysql \
-        opcache; \
+        opcache \
+        mbstring; \
     printf "\n" | pecl install amqp; \
     docker-php-ext-enable amqp; \
     apk del .build-deps
@@ -45,8 +49,8 @@ RUN composer install \
 # Copy application source
 COPY --chown=www-data:www-data . .
 
-# Prepare Symfony writable directories
-RUN mkdir -p var/cache var/log \
+# Prepare Symfony writable directories (uploads are a mounted volume at runtime)
+RUN mkdir -p var/cache var/log var/uploads \
     && chown -R www-data:www-data var
 
 COPY --from=infra base/scripts/register.sh /usr/local/bin/register.sh

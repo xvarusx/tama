@@ -34,10 +34,10 @@ class Unit
     public function __construct(?string $code = null, ?bool $allowDecimal = null)
     {
         $this->products = new ArrayCollection();
-        if (null !== $code) {
+        if ($code !== null) {
             $this->code = $code;
         }
-        if (null !== $allowDecimal) {
+        if ($allowDecimal !== null) {
             $this->allowDecimal = $allowDecimal;
         }
     }

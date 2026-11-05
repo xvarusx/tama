@@ -9,6 +9,7 @@ import SignupPage from "@/pages/(auth)/sign-up/page";
 import DashboardLayout from "@/pages/dashboard/layout";
 import ContactsPage from "@/pages/dashboard/contacts/page";
 import ProductsPage from "@/pages/dashboard/products/page";
+import ProductShowPage from "@/pages/dashboard/products/show";
 import ProtectedRoute from "@/lib/protected-routes";
 import PublicRoute from "@/lib/public-routes";
 import { AuthProvider } from "@/lib/auth-provider";
@@ -33,6 +34,7 @@ createRoot(document.getElementById("root")!).render(
             <Route index element={<Navigate to="contacts" replace />} />
             <Route path="contacts" element={<ContactsPage />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="products/:id" element={<ProductShowPage />} />
           </Route>
         </Route>
       </Routes>

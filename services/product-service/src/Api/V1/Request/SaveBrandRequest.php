@@ -16,6 +16,5 @@ final class SaveBrandRequest
         #[Assert\Length(max: 255)]
         #[Assert\Regex('/^[a-z0-9]+(-[a-z0-9]+)*$/', message: 'Use lowercase letters, digits and dashes only.')]
         public readonly ?string $slug = null,
-    ) {
-    }
+    ) {}
 }

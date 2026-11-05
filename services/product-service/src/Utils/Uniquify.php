@@ -23,10 +23,10 @@ final class Uniquify
         }
 
         $i = 2;
-        while (isset($taken[$base.'-'.$i])) {
+        while (isset($taken[$base . '-' . $i])) {
             ++$i;
         }
 
-        return $base.'-'.$i;
+        return $base . '-' . $i;
     }
 }

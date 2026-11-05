@@ -5,10 +5,12 @@ import type {
 } from "@/services/products-api"
 
 export interface VariantFormValues {
+  id?: number
   sku: string
   costPrice: string
   sellingPrice: string
   barcode: string
+  options?: Record<string, string> | null
 }
 
 export interface ProductFormValues {
@@ -64,10 +66,12 @@ export function toProductFormValues(product: Product): ProductFormValues {
       : "",
     description: product.attributes.description ?? "",
     variants: product.attributes.variants.map((variant) => ({
+      id: variant.id,
       sku: variant.sku,
       costPrice: variant.costPrice ?? "",
       sellingPrice: variant.sellingPrice,
       barcode: variant.barcode ?? "",
+      options: variant.options,
     })),
   }
 }
@@ -152,10 +156,12 @@ export function toProductInput(values: ProductFormValues): ProductInput {
     categoryId: values.categoryId.trim() === "" ? null : toId(values.categoryId),
     description: toNullable(values.description),
     variants: values.variants.map((variant) => ({
+      ...(variant.id ? { id: variant.id } : {}),
       sku: variant.sku.trim(),
       costPrice: variant.costPrice.trim(),
       sellingPrice: variant.sellingPrice.trim(),
       barcode: toNullable(variant.barcode),
+      ...(variant.options !== undefined ? { options: variant.options } : {}),
     })),
   }
 }
@@ -163,13 +169,5 @@ export function toProductInput(values: ProductFormValues): ProductInput {
 export function toProductUpdateInput(
   values: ProductFormValues,
 ): ProductUpdateInput {
-  const input = toProductInput(values)
-
-  return {
-    name: input.name,
-    brandId: input.brandId,
-    unitId: input.unitId,
-    categoryId: input.categoryId,
-    description: input.description,
-  }
+  return toProductInput(values)
 }

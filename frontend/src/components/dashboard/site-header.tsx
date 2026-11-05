@@ -21,7 +21,9 @@ const sectionLabels: Record<string, string> = {
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar()
   const { pathname } = useLocation()
-  const section = sectionLabels[pathname]
+  const section =
+    sectionLabels[pathname] ??
+    (pathname.startsWith("/dashboard/products/") ? "Products" : undefined)
 
   return (
     <header className="sticky top-0 z-50 flex w-full items-center border-b bg-background">

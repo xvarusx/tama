@@ -20,6 +20,7 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "8.1.*",
         "symfony/messenger": "8.1.*",
+        "symfony/mime": "8.1.*",
         "symfony/property-access": "8.1.*",
         "symfony/property-info": "8.1.*",
         "symfony/runtime": "8.1.*",
@@ -29,6 +30,7 @@
     },
     "config": {
         "allow-plugins": {
+            "pestphp/pest-plugin": true,
             "php-http/discovery": true,
             "symfony/flex": true,
             "symfony/runtime": true
@@ -59,6 +61,12 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
+        "cs-check": "./vendor/bin/php-cs-fixer check ./src",
+        "cs-fix": "./vendor/bin/php-cs-fixer fix ./src",
+        "rector:check": "@php vendor/bin/rector  --config=Build/rector/rector.php --dry-run",
+        "rector:run": "@php vendor/bin/rector process --config=Build/rector/rector.php",
+        "stan": "vendor/bin/phpstan analyse --level=6 ./src",
+        "unit-test": "./vendor/bin/pest",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
@@ -82,7 +90,10 @@
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "friendsofphp/php-cs-fixer": "*",
+        "pestphp/pest": "^5.3",
+        "phpstan/phpstan": "^2.3",
         "phpunit/phpunit": "^13.4",
+        "rector/rector": "^2.8",
         "symfony/browser-kit": "8.1.*",
         "symfony/css-selector": "8.1.*",
         "symfony/maker-bundle": "^1.68"

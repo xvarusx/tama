@@ -13,13 +13,12 @@ final class Pagination
         public readonly int $pageSize,
         public readonly int $totalItems,
         public readonly array $links,
-    ) {
-    }
+    ) {}
 
     /** @param \Closure(int): string $urlForPage builds the URL of a given page */
     public static function create(int $page, int $pageSize, int $totalItems, \Closure $urlForPage): self
     {
-        $totalPages = max(1, (int) ceil($totalItems / $pageSize));
+        $totalPages = max(1, (int)ceil($totalItems / $pageSize));
 
         $links = ['first' => $urlForPage(1), 'last' => $urlForPage($totalPages)];
         if ($page > 1) {

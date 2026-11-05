@@ -200,6 +200,24 @@ export default function ProductsPage() {
     setReferencesKey((key) => key + 1)
   }
 
+  function handleReferenceCreated(
+    kind: "brand" | "category",
+    item: ProductBrand | ProductCategory,
+  ) {
+    if (kind === "brand") {
+      const brand = item as ProductBrand
+      setBrands((current) =>
+        [...current, brand].sort((a, b) => a.name.localeCompare(b.name)),
+      )
+      return
+    }
+
+    const category = item as ProductCategory
+    setCategories((current) =>
+      [...current, category].sort((a, b) => a.name.localeCompare(b.name)),
+    )
+  }
+
   const brandItems = {
     [ALL]: "All brands",
     ...Object.fromEntries(brands.map((brand) => [String(brand.id), brand.name])),
@@ -374,6 +392,7 @@ export default function ProductsPage() {
             }
           }}
           onSaved={handleSaved}
+          onReferenceCreated={handleReferenceCreated}
         />
       )}
 

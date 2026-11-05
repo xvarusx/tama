@@ -11,6 +11,5 @@ final class ProductResource
         public readonly int $id,
         public readonly array $attributes,
         public readonly string $type = 'product',
-    ) {
-    }
+    ) {}
 }

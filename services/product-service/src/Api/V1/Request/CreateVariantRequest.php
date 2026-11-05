@@ -29,6 +29,5 @@ final class CreateVariantRequest
 
         /** e.g. {"size": "M", "color": "red"} */
         public readonly ?array $options = null,
-    ) {
-    }
+    ) {}
 }

@@ -28,8 +28,7 @@ final class PreviewController extends AbstractController
         private readonly SlugGenerator $slugs,
         private readonly SkuGenerator $skus,
         private readonly EntityManagerInterface $em,
-    ) {
-    }
+    ) {}
 
     #[Route('/slugs/preview', name: 'api_v1_preview_slug', methods: ['GET'])]
     public function slug(#[MapQueryString] PreviewSlugQuery $query): JsonResponse

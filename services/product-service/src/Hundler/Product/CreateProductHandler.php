@@ -28,8 +28,7 @@ final class CreateProductHandler
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
         private readonly \App\Utils\SkuGenerator $skus,
-    ) {
-    }
+    ) {}
 
     public function __invoke(CreateProductRequest $request): Product
     {
@@ -38,12 +37,12 @@ final class CreateProductHandler
         $unit = $this->em->find(Unit::class, $request->unitId)
             ?? throw new ReferenceNotFoundException('Unit', $request->unitId);
         $category = null;
-        if (null !== $request->categoryId) {
+        if ($request->categoryId !== null) {
             $category = $this->em->find(Category::class, $request->categoryId)
                 ?? throw new ReferenceNotFoundException('Category', $request->categoryId);
         }
 
-        $skus = array_map(static fn (CreateVariantRequest $v): string => $v->sku, $request->variants);
+        $skus = array_map(static fn(CreateVariantRequest $v): string => $v->sku, $request->variants);
         $this->assertSkusAreFree($skus);
 
         $product = new Product($request->name, $brand, $unit);
@@ -51,7 +50,7 @@ final class CreateProductHandler
         $product->setCategory($category);
         $taken = [];
         foreach ($request->variants as $v) {
-            $sku = (null !== $v->sku && '' !== $v->sku)
+            $sku = ($v->sku !== null && $v->sku !== '')
                 ? $v->sku
                 : $this->skus->generate($brand->getName(), $request->name, $v->options, $taken);
             $taken[] = $sku;
@@ -80,18 +79,18 @@ final class CreateProductHandler
     private function assertSkusAreFree(array $skus): void
     {
         $duplicatesInPayload = array_diff_assoc($skus, array_unique($skus));
-        if ([] !== $duplicatesInPayload) {
-            throw new DuplicateSkuException((string) reset($duplicatesInPayload));
+        if ($duplicatesInPayload !== []) {
+            throw new DuplicateSkuException((string)reset($duplicatesInPayload));
         }
 
         $existing = $this->em
-            ->createQuery('SELECT v FROM '.ProductVariant::class.' v WHERE v.sku IN (:skus)')
+            ->createQuery('SELECT v FROM ' . ProductVariant::class . ' v WHERE v.sku IN (:skus)')
             ->setParameter('skus', $skus)
             ->setMaxResults(1)
             ->getResult();
 
-        if ([] !== $existing) {
-            throw new DuplicateSkuException((string) $existing[0]->getSku());
+        if ($existing !== []) {
+            throw new DuplicateSkuException((string)$existing[0]->getSku());
         }
     }
 }

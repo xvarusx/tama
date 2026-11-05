@@ -27,8 +27,7 @@ final class BrandController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
         private readonly SlugGenerator $slugs,
-    ) {
-    }
+    ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(): JsonResponse

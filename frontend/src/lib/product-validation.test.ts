@@ -43,6 +43,7 @@ const product: Product = {
         costPrice: "10.00",
       },
     ],
+    media: [],
     createdAt: "2026-01-01T00:00:00+00:00",
     updatedAt: "2026-01-01T00:00:00+00:00",
   },
@@ -196,13 +197,47 @@ describe("toProductInput", () => {
 })
 
 describe("toProductUpdateInput", () => {
-  it("omits variants because PUT cannot change them", () => {
+  it("includes the variants so PUT can sync them", () => {
     expect(toProductUpdateInput(validValues())).toEqual({
       name: "Product",
       brandId: 1,
       unitId: 2,
       categoryId: null,
       description: null,
+      variants: [
+        {
+          sku: "SKU-1",
+          costPrice: "10.00",
+          sellingPrice: "12.00",
+          barcode: null,
+        },
+      ],
+    })
+  })
+
+  it("keeps variant ids and options", () => {
+    const input = toProductUpdateInput(
+      validValues({
+        variants: [
+          {
+            id: 11,
+            sku: "SKU-7",
+            costPrice: "10.00",
+            sellingPrice: "12.00",
+            barcode: "",
+            options: { size: "M" },
+          },
+        ],
+      }),
+    )
+
+    expect(input.variants[0]).toEqual({
+      id: 11,
+      sku: "SKU-7",
+      costPrice: "10.00",
+      sellingPrice: "12.00",
+      barcode: null,
+      options: { size: "M" },
     })
   })
 })
@@ -216,8 +251,26 @@ describe("toProductFormValues", () => {
       categoryId: "3",
       description: "",
       variants: [
-        { sku: "SKU-7", costPrice: "10.00", sellingPrice: "12.00", barcode: "" },
+        {
+          id: 11,
+          sku: "SKU-7",
+          costPrice: "10.00",
+          sellingPrice: "12.00",
+          barcode: "",
+          options: null,
+        },
       ],
+    })
+  })
+
+  it("keeps variant ids and options", () => {
+    expect(toProductFormValues(product).variants[0]).toEqual({
+      id: 11,
+      sku: "SKU-7",
+      costPrice: "10.00",
+      sellingPrice: "12.00",
+      barcode: "",
+      options: null,
     })
   })
 

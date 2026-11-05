@@ -9,8 +9,7 @@ final class ApiResponse implements \JsonSerializable
     private function __construct(
         private readonly mixed $data,
         private readonly ?Pagination $pagination,
-    ) {
-    }
+    ) {}
 
     public static function success(mixed $data, ?Pagination $pagination = null): self
     {
@@ -20,7 +19,7 @@ final class ApiResponse implements \JsonSerializable
     public function jsonSerialize(): array
     {
         $body = ['status' => 'success', 'data' => $this->data];
-        if (null !== $this->pagination) {
+        if ($this->pagination !== null) {
             $body['pagination'] = $this->pagination;
         }
 

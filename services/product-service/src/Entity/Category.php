@@ -38,10 +38,10 @@ class Category
     public function __construct(?string $name = null, ?string $slug = null, int $position = 0)
     {
         $this->products = new ArrayCollection();
-        if (null !== $name) {
+        if ($name !== null) {
             $this->name = $name;
         }
-        if (null !== $slug) {
+        if ($slug !== null) {
             $this->slug = $slug;
         }
         $this->position = $position;

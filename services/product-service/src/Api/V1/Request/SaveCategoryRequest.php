@@ -17,6 +17,5 @@ final class SaveCategoryRequest
         public readonly ?string $slug = null,
         #[Assert\PositiveOrZero]
         public readonly int $position = 0,
-    ) {
-    }
+    ) {}
 }

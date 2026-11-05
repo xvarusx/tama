@@ -105,7 +105,7 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Gamma Product');
 
-        $this->client->request('GET', '/api/v1/products/'.$product->getId());
+        $this->client->request('GET', '/api/v1/products/' . $product->getId());
 
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
 
@@ -159,7 +159,7 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Old Name');
 
-        $this->client->request('PUT', '/api/v1/products/'.$product->getId(), [], [], [
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'Renamed Product',
@@ -245,7 +245,7 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Delete Me');
 
-        $this->client->request('DELETE', '/api/v1/products/'.$product->getId());
+        $this->client->request('DELETE', '/api/v1/products/' . $product->getId());
 
         self::assertResponseStatusCodeSame(Response::HTTP_NO_CONTENT);
 
@@ -255,6 +255,114 @@ final class ProductsControllerTest extends WebTestCase
         $found = $em->createQuery('SELECT p FROM App\Entity\Product p WHERE p.id = :id')
             ->setParameter('id', $product->getId())
             ->getOneOrNullResult();
-        self::assertNull($found, 'Product should be deleted but was found: '.($found?->getId() ?? 'null'));
+        self::assertNull($found, 'Product should be deleted but was found: ' . ($found?->getId() ?? 'null'));
+    }
+
+    public function testUpdateProductSyncsVariants(): void
+    {
+        $product = $this->seedProduct('Variant Parent');
+        $existing = $product->getProductVariant()->first();
+        self::assertNotNull($existing);
+
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'name' => 'Variant Parent',
+            'brandId' => $product->getBrand()->getId(),
+            'unitId' => $product->getUnit()->getId(),
+            'variants' => [
+                [
+                    'id' => $existing->getId(),
+                    'sku' => 'SKU-001',
+                    'costPrice' => '10.00',
+                    'sellingPrice' => '19.99',
+                    'barcode' => '999',
+                ],
+                ['sku' => 'SKU-002', 'costPrice' => '11.00', 'sellingPrice' => '20.00'],
+            ],
+        ]));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        $variants = $body['data']['attributes']['variants'];
+
+        self::assertCount(2, $variants);
+        self::assertSame('19.99', $variants[0]['sellingPrice']);
+        self::assertSame('999', $variants[0]['barcode']);
+        self::assertSame('SKU-002', $variants[1]['sku']);
+
+        $created = $variants[1];
+
+        // The second PUT keeps SKU-002 and deletes the first variant.
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'name' => 'Variant Parent',
+            'brandId' => $product->getBrand()->getId(),
+            'unitId' => $product->getUnit()->getId(),
+            'variants' => [[
+                'id' => $created['id'],
+                'sku' => 'SKU-002',
+                'costPrice' => '11.00',
+                'sellingPrice' => '20.00',
+            ]],
+        ]));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+
+        self::assertCount(1, $body['data']['attributes']['variants']);
+        self::assertSame('SKU-002', $body['data']['attributes']['variants'][0]['sku']);
+    }
+
+    public function testUpdateProductWithDuplicateSkuReturns409(): void
+    {
+        $product = $this->seedProduct('First Product');
+
+        $em = $this->em();
+        $other = new Product('Second Product', $this->seedBrand('Other Brand'), $this->seedUnit('pcs'));
+        $other->addProductVariant(new ProductVariant('OTHER-SKU', '1.00', '2.00'));
+        $em->persist($other);
+        $em->flush();
+
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'name' => 'First Product',
+            'brandId' => $product->getBrand()->getId(),
+            'unitId' => $product->getUnit()->getId(),
+            'variants' => [[
+                'sku' => 'OTHER-SKU',
+                'costPrice' => '1.00',
+                'sellingPrice' => '2.00',
+            ]],
+        ]));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_CONFLICT);
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertSame('SKU_ALREADY_EXISTS', $body['error']['code']);
+    }
+
+    public function testUpdateProductWithUnknownVariantIdReturns422(): void
+    {
+        $product = $this->seedProduct('Orphan Variant');
+
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'name' => 'Orphan Variant',
+            'brandId' => $product->getBrand()->getId(),
+            'unitId' => $product->getUnit()->getId(),
+            'variants' => [[
+                'id' => 999999,
+                'sku' => 'SKU-001',
+                'costPrice' => '10.00',
+                'sellingPrice' => '12.00',
+            ]],
+        ]));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertSame('REFERENCE_NOT_FOUND', $body['error']['code']);
     }
 }

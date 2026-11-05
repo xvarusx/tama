@@ -28,6 +28,8 @@ services:
       - php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
     expose:
       - "9000"
+    volumes:
+      - product_uploads:/srv/app/var/uploads
     networks:
       - microservice_net
     develop:
@@ -110,3 +112,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+volumes:
+  product_uploads:

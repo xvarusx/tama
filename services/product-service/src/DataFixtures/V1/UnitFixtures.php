@@ -15,7 +15,7 @@ class UnitFixtures extends Fixture
         foreach ([['pcs', false], ['kg', true], ['box', false]] as [$code, $allowDecimal]) {
             $unit = new Unit($code, $allowDecimal);
             $manager->persist($unit);
-            $this->addReference('unit-'.$code, $unit);
+            $this->addReference('unit-' . $code, $unit);
         }
 
         $manager->flush();

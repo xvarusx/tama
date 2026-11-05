@@ -13,6 +13,5 @@ final class VariantResource
         public readonly ?array $options,
         public readonly string $sellingPrice,
         public readonly ?string $costPrice = null,
-    ) {
-    }
+    ) {}
 }

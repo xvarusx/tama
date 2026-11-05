@@ -16,6 +16,5 @@ final class PreviewSkuQuery
         #[Assert\Length(max: 255)]
         public readonly string $name,
         public readonly ?array $options = null,
-    ) {
-    }
+    ) {}
 }

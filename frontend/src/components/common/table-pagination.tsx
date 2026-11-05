@@ -38,7 +38,7 @@ export default function TablePagination({
   const pageItems = getPageItems(page, totalPages)
 
   return (
-    <div className="flex items-center justify-between px-4">
+    <div className="flex w-full flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
         <Field orientation="horizontal" className="w-fit">
           <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
@@ -63,7 +63,7 @@ export default function TablePagination({
           Page {page} of {totalPages}
         </span>
       </div>
-      <Pagination className="mx-0 w-auto">
+      <Pagination className="mx-0 ml-auto w-auto justify-end">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious

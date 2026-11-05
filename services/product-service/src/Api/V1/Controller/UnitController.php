@@ -25,8 +25,7 @@ final class UnitController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
-    ) {
-    }
+    ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(): JsonResponse

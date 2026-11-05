@@ -15,7 +15,7 @@ class BrandFixtures extends Fixture
         foreach ([['acme', 'Acme'], ['northwind', 'Northwind'], ['globex', 'Globex']] as [$slug, $name]) {
             $brand = new Brand($name, $slug);
             $manager->persist($brand);
-            $this->addReference('brand-'.$slug, $brand);
+            $this->addReference('brand-' . $slug, $brand);
         }
 
         $manager->flush();
