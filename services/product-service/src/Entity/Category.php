@@ -26,16 +26,14 @@ class Category
     #[ORM\Column(length: 255, unique: true)]
     private ?string $slug = null;
 
-    #[ORM\Column(options: ['default' => 0])]
-    private int $position = 0;
-
     /**
      * @var Collection<int, Product>
      */
     #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'category')]
     private Collection $products;
 
-    public function __construct(?string $name = null, ?string $slug = null, int $position = 0)
+    public function __construct(?string $name = null, ?string $slug = null, #[ORM\Column(options: ['default' => 0])]
+        private int $position = 0)
     {
         $this->products = new ArrayCollection();
         if ($name !== null) {
@@ -44,7 +42,6 @@ class Category
         if ($slug !== null) {
             $this->slug = $slug;
         }
-        $this->position = $position;
     }
 
     public function getId(): ?int

@@ -7,14 +7,14 @@ namespace App\Api\V1\Request;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /** e.g. /skus/preview?brandId=1&name=Wireless Mouse&options[size]=M&options[color]=Black */
-final class PreviewSkuQuery
+final readonly class PreviewSkuQuery
 {
     public function __construct(
         #[Assert\Positive]
-        public readonly int $brandId,
+        public int $brandId,
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public readonly string $name,
-        public readonly ?array $options = null,
+        public string $name,
+        public ?array $options = null,
     ) {}
 }

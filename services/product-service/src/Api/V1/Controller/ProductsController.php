@@ -49,7 +49,7 @@ final class ProductsController extends AbstractController
             $query->categoryId,
             $query->brandId,
         );
-        $data = array_map(fn(Product $p) => $this->mapper->toResource($p), $items);
+        $data = array_map($this->mapper->toResource(...), $items);
         $pagination = Pagination::create(
             $query->page,
             $query->pageSize,

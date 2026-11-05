@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ProductVariantRepository;
 use App\Traits\ShareableTrait;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -18,36 +19,25 @@ class ProductVariant
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255, nullable: true, unique: true)]
-    private ?string $sku = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $barcode = null;
-
     #[ORM\Column(nullable: true)]
-    private ?array $options = null;
-
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
-    private ?string $costPrice = null;
-
-    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
-    private ?string $sellingPrice = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $stockUpdatedAt = null;
+    private ?DateTimeImmutable $stockUpdatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'productVariant')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 
-    public function __construct(string $sku, string $costPrice, string $sellingPrice, ?string $barcode = null, ?array $options = null)
-    {
-        $this->sku = $sku;
-        $this->costPrice = $costPrice;
-        $this->sellingPrice = $sellingPrice;
-        $this->barcode = $barcode;
-        $this->options = $options;
-    }
+    public function __construct(
+        #[ORM\Column(length: 255, nullable: true, unique: true)]
+        private string $sku,
+        #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+        private string $costPrice,
+        #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
+        private string $sellingPrice,
+        #[ORM\Column(length: 255, nullable: true)]
+        private ?string $barcode = null,
+        #[ORM\Column(nullable: true)]
+        private ?array $options = null
+    ) {}
 
     public function getId(): ?int
     {
@@ -114,12 +104,12 @@ class ProductVariant
         return $this;
     }
 
-    public function getStockUpdatedAt(): ?\DateTimeImmutable
+    public function getStockUpdatedAt(): ?DateTimeImmutable
     {
         return $this->stockUpdatedAt;
     }
 
-    public function setStockUpdatedAt(?\DateTimeImmutable $stockUpdatedAt): static
+    public function setStockUpdatedAt(?DateTimeImmutable $stockUpdatedAt): static
     {
         $this->stockUpdatedAt = $stockUpdatedAt;
 

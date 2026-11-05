@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use RuntimeException;
+
 /** Base class for expected business errors. The subscriber turns them into the error format. */
-abstract class ApiException extends \RuntimeException
+abstract class ApiException extends RuntimeException
 {
     abstract public function getErrorCode(): string;
 

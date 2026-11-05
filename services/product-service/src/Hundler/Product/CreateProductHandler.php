@@ -14,6 +14,7 @@ use App\Entity\Unit;
 use App\Event\ProductCreatedV1;
 use App\Exceptions\DuplicateSkuException;
 use App\Exceptions\ReferenceNotFoundException;
+use App\Utils\SkuGenerator;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
@@ -22,12 +23,12 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
  * Use case: create a product with its variants.
  * The product and its outbox event are saved in ONE transaction.
  */
-final class CreateProductHandler
+final readonly class CreateProductHandler
 {
     public function __construct(
-        private readonly EntityManagerInterface $em,
-        private readonly TagAwareCacheInterface $cache,
-        private readonly \App\Utils\SkuGenerator $skus,
+        private EntityManagerInterface $em,
+        private TagAwareCacheInterface $cache,
+        private SkuGenerator $skus,
     ) {}
 
     public function __invoke(CreateProductRequest $request): Product
@@ -50,7 +51,7 @@ final class CreateProductHandler
         $product->setCategory($category);
         $taken = [];
         foreach ($request->variants as $v) {
-            $sku = ($v->sku !== null && $v->sku !== '')
+            $sku = $v->sku !== ''
                 ? $v->sku
                 : $this->skus->generate($brand->getName(), $request->name, $v->options, $taken);
             $taken[] = $sku;

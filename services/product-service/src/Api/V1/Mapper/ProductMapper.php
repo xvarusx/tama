@@ -26,7 +26,7 @@ final class ProductMapper
                 'unit' => ['id' => $product->getUnit()->getId(), 'code' => $product->getUnit()->getCode()],
                 'category' => $category ? ['id' => $category->getId(), 'name' => $category->getName()] : null,
                 'variants' => array_values(array_map(
-                    fn(ProductVariant $v): VariantResource => $this->toVariantResource($v),
+                    $this->toVariantResource(...),
                     $product->getProductVariant()->toArray(),
                 )),
                 'media' => array_values(array_map(

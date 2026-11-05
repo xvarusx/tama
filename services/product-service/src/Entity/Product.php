@@ -20,9 +20,6 @@ class Product
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $name = null;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
@@ -45,19 +42,13 @@ class Product
     #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'product', orphanRemoval: true, cascade: ['persist'])]
     private Collection $productVariant;
 
-    #[ORM\ManyToOne(inversedBy: 'products')]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Unit $unit = null;
-
-    #[ORM\ManyToOne(inversedBy: 'products')]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Brand $brand = null;
-
-    public function __construct(?string $name = null, ?Brand $brand = null, ?Unit $unit = null)
+    public function __construct(#[ORM\Column(length: 255)]
+        private ?string $name = null, #[ORM\ManyToOne(inversedBy: 'products')]
+        #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+        private ?Brand $brand = null, #[ORM\ManyToOne(inversedBy: 'products')]
+        #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+        private ?Unit $unit = null)
     {
-        $this->name = $name;
-        $this->brand = $brand;
-        $this->unit = $unit;
         $this->productVariant = new ArrayCollection();
         $this->media = new ArrayCollection();
     }

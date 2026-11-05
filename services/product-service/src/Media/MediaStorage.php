@@ -6,6 +6,7 @@ namespace App\Media;
 
 use App\Entity\Product;
 use App\Entity\ProductMedia;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -13,10 +14,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * Stores product images outside the database. The DB keeps a path relative to
  * the upload directory, so the directory can be moved or mounted as a volume.
  */
-final class MediaStorage
+final readonly class MediaStorage
 {
     /** @var array<string, string> */
-    public const ALLOWED_MIME_TYPES = [
+    public const array ALLOWED_MIME_TYPES = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'image/webp' => 'webp',
@@ -26,8 +27,8 @@ final class MediaStorage
     public const MAX_BYTES = 5 * 1024 * 1024;
 
     public function __construct(
-        #[Autowire('%media_dir%')]
-        private readonly string $uploadDir,
+        #[Autowire(param: 'media_dir')]
+        private string $uploadDir,
     ) {}
 
     public function store(UploadedFile $file, Product $product, int $position): ProductMedia
@@ -44,7 +45,7 @@ final class MediaStorage
 
         $directory = dirname($this->absolutePathFor($relativePath));
         if (!is_dir($directory) && !mkdir($directory, 0o775, true) && !is_dir($directory)) {
-            throw new \RuntimeException(sprintf('Unable to create the media directory "%s".', $directory));
+            throw new RuntimeException(sprintf('Unable to create the media directory "%s".', $directory));
         }
 
         $file->move($directory, basename($relativePath));

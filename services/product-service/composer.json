@@ -61,12 +61,13 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
-        "cs-check": "./vendor/bin/php-cs-fixer check ./src",
-        "cs-fix": "./vendor/bin/php-cs-fixer fix ./src",
-        "rector:check": "@php vendor/bin/rector  --config=Build/rector/rector.php --dry-run",
+        "cs:check": "@php vendor/bin/php-cs-fixer check --config=Build/cs-fixer/php-cs-fixer.php",
+        "cs:fix": "@php vendor/bin/php-cs-fixer fix --config=Build/cs-fixer/php-cs-fixer.php",
+        "rector:check": "@php vendor/bin/rector process --config=Build/rector/rector.php --dry-run",
         "rector:run": "@php vendor/bin/rector process --config=Build/rector/rector.php",
-        "stan": "vendor/bin/phpstan analyse --level=6 ./src",
-        "unit-test": "./vendor/bin/pest",
+        "stan:fix": "@php vendor/bin/phpstan analyse --configuration=Build/stan/phpstan.neon --fix",
+        "stan": "@php vendor/bin/phpstan analyse --configuration=Build/stan/phpstan.neon",
+        "unit:test": "@php vendor/bin/phpunit --configuration=Build/unit/phpunit.dist.xml",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
@@ -90,8 +91,8 @@
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "friendsofphp/php-cs-fixer": "*",
-        "pestphp/pest": "^5.3",
         "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-doctrine": "^2.1",
         "phpunit/phpunit": "^13.4",
         "rector/rector": "^2.8",
         "symfony/browser-kit": "8.1.*",

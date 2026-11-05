@@ -13,23 +13,23 @@ use Symfony\Component\Validator\Constraints as Assert;
  * created, and existing variants not present in the list are deleted. Omitting
  * `variants` leaves the variants untouched (backwards compatible with the v1 API).
  */
-final class UpdateProductRequest
+final readonly class UpdateProductRequest
 {
     /** @param UpdateVariantRequest[]|null $variants */
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public readonly string $name,
+        public string $name,
         #[Assert\Positive]
-        public readonly int $brandId,
+        public int $brandId,
         #[Assert\Positive]
-        public readonly int $unitId,
+        public int $unitId,
         #[Assert\Length(max: 5000)]
-        public readonly ?string $description = null,
+        public ?string $description = null,
         #[Assert\Positive]
-        public readonly ?int $categoryId = null,
+        public ?int $categoryId = null,
         #[Assert\Count(min: 1, max: 100)]
         #[Assert\Valid]
-        public readonly ?array $variants = null,
+        public ?array $variants = null,
     ) {}
 }

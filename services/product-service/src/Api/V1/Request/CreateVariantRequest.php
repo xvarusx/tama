@@ -6,9 +6,9 @@ namespace App\Api\V1\Request;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class CreateVariantRequest
+final readonly class CreateVariantRequest
 {
-    private const MONEY = '/^\d{1,10}(\.\d{1,2})?$/';
+    private const string MONEY = '/^\d{1,10}(\.\d{1,2})?$/';
 
     /**
      * Prices are sent as strings ("29.99"), never floats, to avoid rounding errors.
@@ -17,17 +17,17 @@ final class CreateVariantRequest
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public readonly string $sku,
+        public string $sku,
         #[Assert\NotBlank]
         #[Assert\Regex(pattern: self::MONEY, message: 'Must be a decimal number with at most 2 decimals.')]
-        public readonly string $costPrice,
+        public string $costPrice,
         #[Assert\NotBlank]
         #[Assert\Regex(pattern: self::MONEY, message: 'Must be a decimal number with at most 2 decimals.')]
-        public readonly string $sellingPrice,
+        public string $sellingPrice,
         #[Assert\Length(max: 255)]
-        public readonly ?string $barcode = null,
+        public ?string $barcode = null,
 
         /** e.g. {"size": "M", "color": "red"} */
-        public readonly ?array $options = null,
+        public ?array $options = null,
     ) {}
 }

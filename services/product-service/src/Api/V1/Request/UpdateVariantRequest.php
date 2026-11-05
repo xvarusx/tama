@@ -11,26 +11,26 @@ use Symfony\Component\Validator\Constraints as Assert;
  * variant"; a missing id means "create a new variant". Variants omitted from the
  * payload are deleted.
  */
-final class UpdateVariantRequest
+final readonly class UpdateVariantRequest
 {
-    private const MONEY = '/^\d{1,10}(\.\d{1,2})?$/';
+    private const string MONEY = '/^\d{1,10}(\.\d{1,2})?$/';
 
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public readonly string $sku,
+        public string $sku,
         #[Assert\NotBlank]
         #[Assert\Regex(pattern: self::MONEY, message: 'Must be a decimal number with at most 2 decimals.')]
-        public readonly string $costPrice,
+        public string $costPrice,
         #[Assert\NotBlank]
         #[Assert\Regex(pattern: self::MONEY, message: 'Must be a decimal number with at most 2 decimals.')]
-        public readonly string $sellingPrice,
+        public string $sellingPrice,
         #[Assert\Length(max: 255)]
-        public readonly ?string $barcode = null,
+        public ?string $barcode = null,
 
         /** e.g. {"size": "M", "color": "red"} */
-        public readonly ?array $options = null,
+        public ?array $options = null,
         #[Assert\Positive]
-        public readonly ?int $id = null,
+        public ?int $id = null,
     ) {}
 }

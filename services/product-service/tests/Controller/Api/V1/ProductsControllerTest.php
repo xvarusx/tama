@@ -262,7 +262,7 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Variant Parent');
         $existing = $product->getProductVariant()->first();
-        self::assertNotNull($existing);
+        self::assertNotFalse($existing);
 
         $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
             'CONTENT_TYPE' => 'application/json',

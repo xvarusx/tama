@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
+use App\Entity\ProductVariant;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -12,11 +13,11 @@ use Symfony\Component\String\Slugger\SluggerInterface;
  * name and the variant's options. The result is uniquified against the
  * already-chosen SKUs in the same request and the rows already in the DB.
  */
-final class SkuGenerator
+final readonly class SkuGenerator
 {
     public function __construct(
-        private readonly SluggerInterface $slugger,
-        private readonly EntityManagerInterface $em,
+        private SluggerInterface $slugger,
+        private EntityManagerInterface $em,
     ) {}
 
     /**
@@ -52,7 +53,7 @@ final class SkuGenerator
 
         $qb = $this->em->createQueryBuilder()
             ->select('v.sku')
-            ->from(\App\Entity\ProductVariant::class, 'v')
+            ->from(ProductVariant::class, 'v')
             ->where('v.sku = :base OR v.sku LIKE :like')
             ->setParameter('base', $base)
             ->setParameter('like', $base . '-%');

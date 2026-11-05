@@ -17,26 +17,19 @@ class ProductMedia
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $path = null;
-
-    #[ORM\Column(length: 55)]
-    private ?string $kind = null;
-
-    /** Display order: 0 = cover image. */
-    #[ORM\Column(options: ['default' => 0])]
-    private int $position = 0;
-
     #[ORM\ManyToOne(inversedBy: 'media')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Product $product = null;
 
-    public function __construct(string $path, string $kind, int $position = 0)
-    {
-        $this->path = $path;
-        $this->kind = $kind;
-        $this->position = $position;
-    }
+    public function __construct(
+        #[ORM\Column(length: 255)]
+        private string $path,
+        #[ORM\Column(length: 55)]
+        private string $kind,
+        /** Display order: 0 = cover image. */
+        #[ORM\Column(options: ['default' => 0])]
+        private int $position = 0
+    ) {}
 
     public function getId(): ?int
     {

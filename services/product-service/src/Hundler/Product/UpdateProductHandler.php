@@ -17,6 +17,7 @@ use App\Exceptions\ReferenceNotFoundException;
 use App\Repository\ProductRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
@@ -24,18 +25,18 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
  * its variants (update by id, create without id, delete omitted ones).
  * The product change and its outbox event are saved in ONE transaction.
  */
-final class UpdateProductHandler
+final readonly class UpdateProductHandler
 {
     public function __construct(
-        private readonly EntityManagerInterface $em,
-        private readonly ProductRepository $products,
-        private readonly TagAwareCacheInterface $cache,
+        private EntityManagerInterface $em,
+        private ProductRepository $products,
+        private TagAwareCacheInterface $cache,
     ) {}
 
     public function __invoke(int $id, UpdateProductRequest $request): Product
     {
         $product = $this->products->findActiveById($id)
-            ?? throw new \RuntimeException(sprintf('Product %d does not exist.', $id));
+            ?? throw new RuntimeException(sprintf('Product %d does not exist.', $id));
 
         $brand = $this->em->find(Brand::class, $request->brandId)
             ?? throw new ReferenceNotFoundException('Brand', $request->brandId);

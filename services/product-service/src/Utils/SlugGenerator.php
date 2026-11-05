@@ -11,11 +11,11 @@ use Symfony\Component\String\Slugger\SluggerInterface;
  * "Wireless Mice" -> "wireless-mice", and "wireless-mice-2" if the slug is already taken.
  * Works for any entity that has a `slug` field and an `id`.
  */
-final class SlugGenerator
+final readonly class SlugGenerator
 {
     public function __construct(
-        private readonly SluggerInterface $slugger,
-        private readonly EntityManagerInterface $em,
+        private SluggerInterface $slugger,
+        private EntityManagerInterface $em,
     ) {}
 
     /** @param class-string $entityClass @param int|null $ignoreId the entity being updated, so it does not clash with itself */

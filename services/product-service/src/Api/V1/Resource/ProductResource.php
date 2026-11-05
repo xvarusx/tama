@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Api\V1\Resource;
 
-final class ProductResource
+final readonly class ProductResource
 {
     /** @param array<string, mixed> $attributes */
     public function __construct(
-        public readonly int $id,
-        public readonly array $attributes,
-        public readonly string $type = 'product',
+        public int $id,
+        public array $attributes,
+        public string $type = 'product',
     ) {}
 }

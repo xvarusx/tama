@@ -6,6 +6,7 @@ namespace App\Event;
 
 use App\Entity\OutboxEvent;
 use App\Entity\Product;
+use DateTimeImmutable;
 
 /**
  * Contract v1 of product.updated. Only ADD fields, never remove or rename them.
@@ -13,8 +14,8 @@ use App\Entity\Product;
  */
 final class ProductUpdatedV1
 {
-    public const TYPE = 'product.updated';
-    public const VERSION = 1;
+    public const string TYPE = 'product.updated';
+    public const int VERSION = 1;
 
     /** @param string[] $changedFields e.g. ['name', 'brand'] */
     public static function toOutbox(Product $product, array $changedFields): OutboxEvent
@@ -29,7 +30,7 @@ final class ProductUpdatedV1
             'unit' => ['id' => $product->getUnit()->getId(), 'code' => $product->getUnit()->getCode()],
             'category' => $category ? ['id' => $category->getId(), 'name' => $category->getName()] : null,
             'changedFields' => $changedFields,
-            'occurredAt' => new \DateTimeImmutable()->format(\DATE_ATOM),
+            'occurredAt' => new DateTimeImmutable()->format(\DATE_ATOM),
         ]);
     }
 }

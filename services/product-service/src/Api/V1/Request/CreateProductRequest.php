@@ -6,7 +6,7 @@ namespace App\Api\V1\Request;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class CreateProductRequest
+final readonly class CreateProductRequest
 {
     /**
      * Every product has at least one variant; simple products get a single default variant.
@@ -17,17 +17,17 @@ final class CreateProductRequest
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public readonly string $name,
+        public string $name,
         #[Assert\Positive]
-        public readonly int $brandId,
+        public int $brandId,
         #[Assert\Positive]
-        public readonly int $unitId,
+        public int $unitId,
         #[Assert\Count(min: 1, max: 100)]
         #[Assert\Valid]
-        public readonly array $variants,
+        public array $variants,
         #[Assert\Length(max: 5000)]
-        public readonly ?string $description = null,
+        public ?string $description = null,
         #[Assert\Positive]
-        public readonly ?int $categoryId = null,
+        public ?int $categoryId = null,
     ) {}
 }

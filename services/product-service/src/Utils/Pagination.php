@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
-final class Pagination
+use Closure;
+
+final readonly class Pagination
 {
     /** @param array<string, string> $links first / prev / next / last */
     public function __construct(
-        public readonly int $currentPage,
-        public readonly int $totalPages,
-        public readonly int $pageSize,
-        public readonly int $totalItems,
-        public readonly array $links,
+        public int $currentPage,
+        public int $totalPages,
+        public int $pageSize,
+        public int $totalItems,
+        public array $links,
     ) {}
 
-    /** @param \Closure(int): string $urlForPage builds the URL of a given page */
-    public static function create(int $page, int $pageSize, int $totalItems, \Closure $urlForPage): self
+    /** @param Closure(int): string $urlForPage builds the URL of a given page */
+    public static function create(int $page, int $pageSize, int $totalItems, Closure $urlForPage): self
     {
         $totalPages = max(1, (int)ceil($totalItems / $pageSize));
 
