@@ -25,13 +25,12 @@ services:
     entrypoint:
       - /bin/sh
       - -c
-      - php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
+      - mkdir -p public/products-images && chmod 0777 public/products-images && php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
     expose:
       - "9000"
     volumes:
       - ./services/product-service:/srv/app
       - ./services/product-service/docker/php.dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
-      - product_uploads:/srv/app/var/uploads
     networks:
       - microservice_net
     develop:
@@ -103,5 +102,3 @@ services:
       timeout: 3s
       retries: 5
 
-volumes:
-  product_uploads:

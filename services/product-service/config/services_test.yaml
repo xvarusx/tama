@@ -1,3 +1,3 @@
 parameters:
-    # Keep test uploads inside the disposable cache directory, never in var/uploads.
+    # Keep test uploads inside the disposable cache directory, never in public/products-images.
     media_dir: "%kernel.cache_dir%/uploads"

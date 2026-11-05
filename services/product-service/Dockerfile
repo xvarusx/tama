@@ -49,9 +49,9 @@ RUN composer install \
 # Copy application source
 COPY --chown=www-data:www-data . .
 
-# Prepare Symfony writable directories (uploads are a mounted volume at runtime)
-RUN mkdir -p var/cache var/log var/uploads \
-    && chown -R www-data:www-data var
+# Prepare Symfony writable directories (product images live under public/)
+RUN mkdir -p var/cache var/log public/products-images \
+    && chown -R www-data:www-data var public/products-images
 
 COPY --from=infra base/scripts/register.sh /usr/local/bin/register.sh
 RUN chmod +x /usr/local/bin/register.sh
