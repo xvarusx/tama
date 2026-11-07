@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Api\V1\Controller;
 
+use App\Api\V1\Documentation\MediaDocument;
 use App\Entity\Product;
 use App\Entity\ProductMedia;
 use App\Media\MediaStorage;
@@ -11,6 +12,8 @@ use App\Repository\ProductMediaRepository;
 use App\Repository\ProductRepository;
 use App\Utils\ApiResponse;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -23,6 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[Route('', name: 'api_v1_media_')]
+#[OA\Tag(name: 'Product media')]
 final class ProductMediaController extends AbstractController
 {
     public function __construct(
@@ -31,7 +35,45 @@ final class ProductMediaController extends AbstractController
         private readonly TagAwareCacheInterface $cache,
     ) {}
 
+    /**
+     * Upload an image for a product.
+     *
+     * Accepts a multipart/form-data request with a single `file` field. JPEG, PNG,
+     * WebP and SVG images up to 5 MB are supported. The new image is appended
+     * after the product's existing images.
+     */
     #[Route('/products/{id}/media', name: 'upload', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['file'],
+                properties: [
+                    new OA\Property(
+                        property: 'file',
+                        type: 'string',
+                        format: 'binary',
+                        description: 'JPEG, PNG, WebP or SVG image, max 5 MB.',
+                    ),
+                ],
+            ),
+        ),
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Image stored and attached to the product.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'data', ref: new Model(type: MediaDocument::class)),
+            ],
+            type: 'object',
+        ),
+    )]
+    #[OA\Response(response: 400, description: 'The "file" field is missing or the image is larger than 5 MB.')]
+    #[OA\Response(response: 404, description: 'Product not found.')]
+    #[OA\Response(response: 415, description: 'Unsupported image type.')]
     public function upload(
         int $id,
         Request $request,
@@ -66,7 +108,22 @@ final class ProductMediaController extends AbstractController
         return new JsonResponse(ApiResponse::success($this->toArray($media)), Response::HTTP_CREATED);
     }
 
+    /**
+     * Fetch the raw bytes of a product image.
+     *
+     * The response Content-Type matches the stored file. SVG responses are served
+     * with a restrictive Content-Security-Policy so they cannot run scripts.
+     */
     #[Route('/media/{id}', name: 'show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Raw image bytes. The Content-Type matches the stored file.',
+        content: new OA\MediaType(
+            mediaType: 'image/*',
+            schema: new OA\Schema(type: 'string', format: 'binary'),
+        ),
+    )]
+    #[OA\Response(response: 404, description: 'Media row or stored file not found.')]
     public function show(int $id, ProductMediaRepository $mediaRepository): BinaryFileResponse
     {
         $media = $mediaRepository->find($id)
@@ -93,7 +150,10 @@ final class ProductMediaController extends AbstractController
         return $response;
     }
 
+    /** Delete a product image, both its database row and its stored file. */
     #[Route('/media/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[OA\Response(response: 204, description: 'Image deleted.')]
+    #[OA\Response(response: 404, description: 'Media not found.')]
     public function delete(int $id, ProductMediaRepository $mediaRepository): Response
     {
         $media = $mediaRepository->find($id)

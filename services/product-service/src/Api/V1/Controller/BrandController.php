@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Api\V1\Controller;
 
+use App\Api\V1\Documentation\BrandDocument;
 use App\Api\V1\Request\SaveBrandRequest;
 use App\Entity\Brand;
 use App\Utils\ApiResponse;
@@ -11,6 +12,8 @@ use App\Utils\SlugGenerator;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +24,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[Route('/brands', name: 'api_v1_brand_')]
+#[OA\Tag(name: 'Brands')]
 final class BrandController extends AbstractController
 {
     public function __construct(
@@ -29,7 +33,23 @@ final class BrandController extends AbstractController
         private readonly SlugGenerator $slugs,
     ) {}
 
+    /** List all brands, sorted by name. The response is cached for one hour. */
     #[Route('', name: 'list', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'All brands.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: BrandDocument::class)),
+                ),
+            ],
+            type: 'object',
+        ),
+    )]
     public function list(): JsonResponse
     {
         $data = $this->cache->get('brands.all', function (ItemInterface $item): array {
@@ -41,7 +61,20 @@ final class BrandController extends AbstractController
         return new JsonResponse(ApiResponse::success($data));
     }
 
+    /** Create a brand. The slug is generated from the name when it is omitted. */
     #[Route('', name: 'create', methods: ['POST'])]
+    #[OA\Response(
+        response: 201,
+        description: 'Brand created.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'data', ref: new Model(type: BrandDocument::class)),
+            ],
+            type: 'object',
+        ),
+    )]
+    #[OA\Response(response: 409, description: 'A brand with this name or slug already exists.')]
     public function create(#[MapRequestPayload] SaveBrandRequest $payload): JsonResponse
     {
         $brand = new Brand($payload->name, $payload->slug ?? $this->slugs->generate($payload->name, Brand::class));
@@ -53,7 +86,21 @@ final class BrandController extends AbstractController
         return new JsonResponse(ApiResponse::success($this->toArray($brand)), Response::HTTP_CREATED);
     }
 
+    /** Rename a brand and/or change its slug. The slug only changes when the name changes. */
     #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Brand updated.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'data', ref: new Model(type: BrandDocument::class)),
+            ],
+            type: 'object',
+        ),
+    )]
+    #[OA\Response(response: 404, description: 'Brand not found.')]
+    #[OA\Response(response: 409, description: 'A brand with this name or slug already exists.')]
     public function update(int $id, #[MapRequestPayload] SaveBrandRequest $payload): JsonResponse
     {
         $brand = $this->em->find(Brand::class, $id) ?? throw $this->createNotFoundException('Brand not found.');
@@ -70,7 +117,11 @@ final class BrandController extends AbstractController
         return new JsonResponse(ApiResponse::success($this->toArray($brand)));
     }
 
+    /** Delete a brand. Brands still referenced by products cannot be deleted. */
     #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[OA\Response(response: 204, description: 'Brand deleted.')]
+    #[OA\Response(response: 404, description: 'Brand not found.')]
+    #[OA\Response(response: 409, description: 'The brand is used by products and cannot be deleted.')]
     public function delete(int $id): Response
     {
         $brand = $this->em->find(Brand::class, $id) ?? throw $this->createNotFoundException('Brand not found.');
