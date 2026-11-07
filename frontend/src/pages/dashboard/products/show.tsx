@@ -71,11 +71,11 @@ export default function ProductShowPage() {
     const request =
       Number.isInteger(productId) && productId > 0
         ? Promise.all([
-            getProduct(productId),
-            getBrands(),
-            getUnits(),
-            getCategories(),
-          ])
+          getProduct(productId),
+          getBrands(),
+          getUnits(),
+          getCategories(),
+        ])
         : Promise.reject(new Error("Invalid product id."))
 
     request
@@ -138,8 +138,7 @@ export default function ProductShowPage() {
     <div className="flex flex-1 flex-col gap-4 px-4 lg:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
-          <Button
-            variant="ghost"
+          <Button variant="outline"
             size="sm"
             className="w-fit px-0"
             onClick={() => navigate("/dashboard/products")}
@@ -285,8 +284,8 @@ export default function ProductShowPage() {
                     <TableCell>
                       {variant.options
                         ? Object.entries(variant.options)
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join(" · ")
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(" · ")
                         : "—"}
                     </TableCell>
                   </TableRow>

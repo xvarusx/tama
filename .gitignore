@@ -37,3 +37,12 @@ Thumbs.db
 
 # PHP CS Fixer configuration
 /.php-cs-fixer.php
+#skills 
+.superpowers/
+.opencode/
+.cursor/
+.docs/
+.claude/
+.commandcode/
+
+

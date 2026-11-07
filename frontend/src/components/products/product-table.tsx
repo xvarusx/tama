@@ -1,4 +1,4 @@
-import { EyeIcon, MoreHorizontalIcon, PackageOpenIcon } from "lucide-react"
+import { EyeIcon, EditIcon, Trash2Icon, MoreHorizontalIcon, PackageOpenIcon } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
 import {
@@ -212,6 +212,8 @@ export default function ProductsTable({
                           View
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onEdit(product)}>
+                          <EditIcon />
+
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -219,6 +221,7 @@ export default function ProductsTable({
                           variant="destructive"
                           onClick={() => onDelete(product)}
                         >
+                          <Trash2Icon />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
