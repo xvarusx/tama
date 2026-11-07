@@ -1,59 +1,25 @@
-name: CI
+name: Product Service CI
 
 on:
   push:
     branches: [main]
+    paths:
+      - "services/product-service/**"
   pull_request:
+    paths:
+      - "services/product-service/**"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: product-service-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  frontend:
-    name: Frontend
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    defaults:
-      run:
-        working-directory: frontend
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 12
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Test
-        run: pnpm test
-
-      - name: Build
-        run: pnpm build
-
-  product-service:
-    name: Product service
+  tests:
+    name: Product Service Checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -88,11 +54,15 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Prepare var directory
-        run: mkdir -p var
+      - name: Prepare environment
+        run: |
+          mkdir -p var
+          cp .env.test .env
 
-      - name: Prepare test environment
-        run: cp .env.test .env
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.4
+        with:
+          version: latest
 
       - name: Install dependencies
         uses: ramsey/composer-install@v3
@@ -111,3 +81,14 @@ jobs:
 
       - name: Tests
         run: composer unit:test
+
+      - name: Security scan
+        run: composer security:dependencies
+
+      - name: Semgrep Security Scan
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            semgrep/semgrep \
+            semgrep scan --config auto --error .
