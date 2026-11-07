@@ -72,6 +72,8 @@
         "stan:fix": "@php vendor/bin/phpstan analyse --configuration=Build/stan/phpstan.neon --fix",
         "stan": "@php vendor/bin/phpstan analyse --configuration=Build/stan/phpstan.neon",
         "unit:test": "@php vendor/bin/phpunit --configuration=Build/unit/phpunit.dist.xml",
+        "security:code": "semgrep scan --config auto",
+        "security:dependencies": "trivy repo --scanners vuln,secret,misconfig .",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd",
