@@ -1,4 +1,6 @@
 vendor/
 var/
 node_modules/
+docs/
+.superpowers/
 .git/
