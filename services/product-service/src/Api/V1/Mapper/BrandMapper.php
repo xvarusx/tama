@@ -6,10 +6,10 @@ namespace App\Api\V1\Mapper;
 
 use App\Entity\Brand;
 use App\Entity\Product;
-final class BrandMapper
+final readonly class BrandMapper
 {
     public function __construct(
-        private readonly ProductMapper $productMapper
+        private ProductMapper $productMapper
     ) {}
     public function toResource(Brand $brand): array
     {
@@ -19,7 +19,7 @@ final class BrandMapper
             'attributes' => [
                 'name' => $brand->getName(),
                 'slug' => $brand->getSlug(),
-                'products' => [array_map(fn(Product $p) => $this->productMapper->toResource($p), $brand->getProducts()->toArray())],
+                'products' => [array_map($this->productMapper->toResource(...), $brand->getProducts()->toArray())],
                 'createdAt' => $brand->getCreatedAt()?->format(\DATE_ATOM),
                 'updatedAt' => $brand->getUpdatedAt()?->format(\DATE_ATOM),
             ],

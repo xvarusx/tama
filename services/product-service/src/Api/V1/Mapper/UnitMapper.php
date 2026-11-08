@@ -7,10 +7,10 @@ namespace App\Api\V1\Mapper;
 use App\Entity\Unit;
 use App\Entity\Product;
 
-final class UnitMapper
+final readonly class UnitMapper
 {
     public function __construct(
-        private readonly ProductMapper $productMapper
+        private ProductMapper $productMapper
     ) {}
     public function toResource(Unit $unit): array
     {
@@ -20,7 +20,7 @@ final class UnitMapper
             'attributes' => [
                 'code' => $unit->getCode(),
                 'allowDecimal' => $unit->isAllowDecimal(),
-                'products' => [array_map(fn(Product $p) => $this->productMapper->toResource($p), $unit->getProducts()->toArray())],
+                'products' => [array_map($this->productMapper->toResource(...), $unit->getProducts()->toArray())],
                 'createdAt' => $unit->getCreatedAt()?->format(\DATE_ATOM),
                 'updatedAt' => $unit->getUpdatedAt()?->format(\DATE_ATOM),
             ],
