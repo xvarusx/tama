@@ -23,7 +23,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
-
 #[Route('/categories', name: 'api_v1_category_')]
 #[OA\Tag(name: 'Categories')]
 final class CategoryController extends AbstractController
