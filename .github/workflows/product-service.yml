@@ -53,6 +53,11 @@ jobs:
           extensions: ctype, iconv, intl, mbstring, pdo_sqlite, sqlite3
           coverage: none
           tools: composer:v2
+          
+      - name: Prepare environment
+        run: |
+          mkdir -p var
+          cp .env.test .env
 
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
