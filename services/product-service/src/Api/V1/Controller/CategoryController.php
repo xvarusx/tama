@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Controller;
 
 use App\Api\V1\Documentation\CategoryDocument;
+use App\Api\V1\Mapper\CategoryMapper;
 use App\Api\V1\Request\SaveCategoryRequest;
 use App\Entity\Category;
 use App\Utils\ApiResponse;
@@ -22,6 +23,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
+
 #[Route('/categories', name: 'api_v1_category_')]
 #[OA\Tag(name: 'Categories')]
 final class CategoryController extends AbstractController
@@ -30,6 +32,7 @@ final class CategoryController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
         private readonly SlugGenerator $slugs,
+        private readonly CategoryMapper $mapper,
     ) {}
 
     /** List all categories, ordered by position and then name. The response is cached for one hour. */
@@ -55,7 +58,7 @@ final class CategoryController extends AbstractController
             $item->tag(['categories'])->expiresAfter(3600);
 
             return array_map(
-                $this->toArray(...),
+                $this->mapper->toResource(...),
                 $this->em->getRepository(Category::class)->findBy([], ['position' => 'ASC', 'name' => 'ASC']),
             );
         });
@@ -85,7 +88,7 @@ final class CategoryController extends AbstractController
 
         $this->cache->invalidateTags(['categories']);
 
-        return new JsonResponse(ApiResponse::success($this->toArray($category)), Response::HTTP_CREATED);
+        return new JsonResponse(ApiResponse::success($this->mapper->toResource($category)), Response::HTTP_CREATED);
     }
 
     /** Rename a category, change its slug and/or move it to another position. */
@@ -115,7 +118,7 @@ final class CategoryController extends AbstractController
         // the category name is embedded in cached product responses too
         $this->cache->invalidateTags(['categories', 'products']);
 
-        return new JsonResponse(ApiResponse::success($this->toArray($category)));
+        return new JsonResponse(ApiResponse::success($this->mapper->toResource($category)));
     }
 
     /** Products of a deleted category keep existing, they just have no category any more. */
@@ -140,10 +143,5 @@ final class CategoryController extends AbstractController
         } catch (UniqueConstraintViolationException) {
             throw new ConflictHttpException('A category with this slug already exists.');
         }
-    }
-
-    private function toArray(Category $c): array
-    {
-        return ['id' => $c->getId(), 'name' => $c->getName(), 'slug' => $c->getSlug(), 'position' => $c->getPosition()];
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Controller;
 
 use App\Api\V1\Documentation\BrandDocument;
+use App\Api\V1\Mapper\BrandMapper;
 use App\Api\V1\Request\SaveBrandRequest;
 use App\Entity\Brand;
 use App\Utils\ApiResponse;
@@ -12,6 +13,7 @@ use App\Utils\SlugGenerator;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\PropertyAccessors\ReadonlyAccessor;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,6 +33,7 @@ final class BrandController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
         private readonly SlugGenerator $slugs,
+        private readonly BrandMapper $mapper,
     ) {}
 
     /** List all brands, sorted by name. The response is cached for one hour. */
@@ -55,7 +58,7 @@ final class BrandController extends AbstractController
         $data = $this->cache->get('brands.all', function (ItemInterface $item): array {
             $item->tag(['brands'])->expiresAfter(3600);
 
-            return array_map($this->toArray(...), $this->em->getRepository(Brand::class)->findBy([], ['name' => 'ASC']));
+            return array_map($this->mapper->toResource(...), $this->em->getRepository(Brand::class)->findBy([], ['name' => 'ASC']));
         });
 
         return new JsonResponse(ApiResponse::success($data));
@@ -83,7 +86,7 @@ final class BrandController extends AbstractController
 
         $this->cache->invalidateTags(['brands']);
 
-        return new JsonResponse(ApiResponse::success($this->toArray($brand)), Response::HTTP_CREATED);
+        return new JsonResponse(ApiResponse::success($this->mapper->toResource($brand)), Response::HTTP_CREATED);
     }
 
     /** Rename a brand and/or change its slug. The slug only changes when the name changes. */
@@ -114,7 +117,7 @@ final class BrandController extends AbstractController
         // the brand name is embedded in cached product responses too
         $this->cache->invalidateTags(['brands', 'products']);
 
-        return new JsonResponse(ApiResponse::success($this->toArray($brand)));
+        return new JsonResponse(ApiResponse::success($this->mapper->toResource($brand)));
     }
 
     /** Delete a brand. Brands still referenced by products cannot be deleted. */
@@ -145,10 +148,5 @@ final class BrandController extends AbstractController
         } catch (UniqueConstraintViolationException) {
             throw new ConflictHttpException('A brand with this name or slug already exists.');
         }
-    }
-
-    private function toArray(Brand $b): array
-    {
-        return ['id' => $b->getId(), 'name' => $b->getName(), 'slug' => $b->getSlug()];
     }
 }

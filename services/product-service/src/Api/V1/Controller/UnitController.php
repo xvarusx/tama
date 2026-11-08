@@ -29,6 +29,7 @@ final class UnitController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly TagAwareCacheInterface $cache,
+        private readonly UnitMapper $mapper,
     ) {}
 
     /** List all units, sorted by code. The response is cached for one hour. */
@@ -53,7 +54,7 @@ final class UnitController extends AbstractController
         $data = $this->cache->get('units.all', function (ItemInterface $item): array {
             $item->tag(['units'])->expiresAfter(3600);
 
-            return array_map($this->toArray(...), $this->em->getRepository(Unit::class)->findBy([], ['code' => 'ASC']));
+            return array_map($this->mapper->toResource(...), $this->em->getRepository(Unit::class)->findBy([], ['code' => 'ASC']));
         });
 
         return new JsonResponse(ApiResponse::success($data));
@@ -81,7 +82,7 @@ final class UnitController extends AbstractController
 
         $this->cache->invalidateTags(['units']);
 
-        return new JsonResponse(ApiResponse::success($this->toArray($unit)), Response::HTTP_CREATED);
+        return new JsonResponse(ApiResponse::success($this->mapper->toResource($unit)), Response::HTTP_CREATED);
     }
 
     /** Change a unit's code and whether it allows decimal quantities. */
@@ -108,7 +109,7 @@ final class UnitController extends AbstractController
         // the unit code is embedded in cached product responses too
         $this->cache->invalidateTags(['units', 'products']);
 
-        return new JsonResponse(ApiResponse::success($this->toArray($unit)));
+        return new JsonResponse(ApiResponse::success($this->mapper->toResource($unit)));
     }
 
     /** Delete a unit. Units still referenced by products cannot be deleted. */
@@ -139,10 +140,5 @@ final class UnitController extends AbstractController
         } catch (UniqueConstraintViolationException) {
             throw new ConflictHttpException('A unit with this code already exists.');
         }
-    }
-
-    private function toArray(Unit $u): array
-    {
-        return ['id' => $u->getId(), 'code' => $u->getCode(), 'allowDecimal' => $u->isAllowDecimal()];
     }
 }
