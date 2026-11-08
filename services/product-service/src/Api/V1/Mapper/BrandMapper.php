@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Mapper;
 
 use App\Entity\Brand;
-use App\Entity\Product;
+
 final readonly class BrandMapper
 {
     public function __construct(
@@ -15,7 +15,7 @@ final readonly class BrandMapper
     {
 
         return [
-            'id' => (int) $brand->getId(),
+            'id' => (int)$brand->getId(),
             'attributes' => [
                 'name' => $brand->getName(),
                 'slug' => $brand->getSlug(),

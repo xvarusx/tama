@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Mapper;
 
 use App\Entity\Category;
-use App\Entity\Product;
+
 final readonly class CategoryMapper
 {
     public function __construct(
@@ -15,7 +15,7 @@ final readonly class CategoryMapper
     {
 
         return [
-            'id' => (int) $category->getId(),
+            'id' => (int)$category->getId(),
             'attributes' => [
                 'name' => $category->getName(),
                 'slug' => $category->getSlug(),

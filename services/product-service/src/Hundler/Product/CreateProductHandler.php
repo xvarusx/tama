@@ -17,7 +17,6 @@ use App\Exceptions\ReferenceNotFoundException;
 use App\Utils\SkuGenerator;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
@@ -82,7 +81,7 @@ final readonly class CreateProductHandler
     {
         $duplicatesInPayload = array_diff_assoc($skus, array_unique($skus));
         if ($duplicatesInPayload !== []) {
-            throw new DuplicateSkuException((string) reset($duplicatesInPayload));
+            throw new DuplicateSkuException((string)reset($duplicatesInPayload));
         }
 
         $existing = $this->em
@@ -92,7 +91,7 @@ final readonly class CreateProductHandler
             ->getResult();
 
         if ($existing !== []) {
-            throw new DuplicateSkuException((string) $existing[0]->getSku());
+            throw new DuplicateSkuException((string)$existing[0]->getSku());
         }
     }
 }
