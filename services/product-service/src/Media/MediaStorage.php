@@ -6,8 +6,10 @@ namespace App\Media;
 
 use App\Entity\Product;
 use App\Entity\ProductMedia;
+use InvalidArgumentException;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
@@ -29,6 +31,7 @@ final readonly class MediaStorage
     public function __construct(
         #[Autowire(param: 'media_dir')]
         private string $uploadDir,
+        private Filesystem $filesystem,
     ) {}
 
     public function store(UploadedFile $file, Product $product, int $position): ProductMedia
@@ -57,13 +60,20 @@ final readonly class MediaStorage
     {
         $path = $this->absolutePath($media);
         if (is_file($path)) {
-            @unlink($path);
+            $this->filesystem->remove($path);
         }
 
         // Remove the per-product directory once it is empty.
         $directory = dirname($path);
-        if (is_dir($directory) && \count(scandir($directory) ?: []) <= 2) {
-            @rmdir($directory);
+        if (is_dir($directory)) {
+            $entries = scandir($directory);
+            if ($entries === false) {
+                throw new RuntimeException(sprintf('Unable to read the media directory "%s".', $directory));
+            }
+
+            if (\count($entries) === 2 && !rmdir($directory)) {
+                throw new RuntimeException(sprintf('Unable to remove the media directory "%s".', $directory));
+            }
         }
     }
 
@@ -74,6 +84,10 @@ final readonly class MediaStorage
 
     private function absolutePathFor(string $relativePath): string
     {
-        return rtrim($this->uploadDir, '/') . '/' . ltrim($relativePath, '/');
+        if (preg_match('#\A\d+/[a-f0-9]{32}\.(?:jpg|png|webp|svg|bin)\z#', $relativePath) !== 1) {
+            throw new InvalidArgumentException('Invalid product media path.');
+        }
+
+        return rtrim($this->uploadDir, '/') . '/' . $relativePath;
     }
 }

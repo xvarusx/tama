@@ -21,6 +21,7 @@
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
         "symfony/flex": "^2",
+        "symfony/filesystem": "8.1.*",
         "symfony/framework-bundle": "8.1.*",
         "symfony/messenger": "8.1.*",
         "symfony/mime": "8.1.*",

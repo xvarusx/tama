@@ -58,4 +58,8 @@ RUN chmod +x /usr/local/bin/register.sh
 
 EXPOSE 9000
 
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 CMD ["php", "-r", "$socket = @fsockopen('127.0.0.1', 9000); if ($socket === false) { exit(1); } fclose($socket);"]
+
+USER www-data
+
 CMD ["php-fpm"]

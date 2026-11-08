@@ -3,6 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@12.11.2",
+  "overrides": {
+    "follow-redirects": "1.16.2",
+    "minimatch": "11.0.1",
+    "reselect": "5.3.0",
+    "semver": "7.8.5"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

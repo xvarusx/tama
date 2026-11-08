@@ -13,6 +13,7 @@ use App\Media\MediaStorage;
 use App\Repository\ProductMediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -147,5 +148,13 @@ final class ProductMediaControllerTest extends WebTestCase
             'sandbox',
             (string)$this->client->getResponse()->headers->get('Content-Security-Policy'),
         );
+    }
+
+    public function testDeleteRejectsStoredPathsOutsideGeneratedFormat(): void
+    {
+        $storage = static::getContainer()->get(MediaStorage::class);
+
+        $this->expectException(InvalidArgumentException::class);
+        $storage->delete(new ProductMedia('../outside.txt', 'image/png'));
     }
 }
