@@ -62,7 +62,7 @@ jobs:
         run: pnpm build
 
       - name: Security scan
-        run: pnpm security:dendencies
+        run: pnpm security:dependencies
 
       - name: Semgrep Security Scan
         run: |
