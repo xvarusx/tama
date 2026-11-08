@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Mapper;
 
 use App\Entity\Brand;
-
+use App\Entity\Product;
 final class BrandMapper
 {
     public function __construct(

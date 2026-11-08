@@ -62,8 +62,8 @@ class ExceptionSubscriber implements EventSubscriberInterface
         // $event->setResponse($response); //
     }
 
-    private function getErrorPhrase(int $statusCode): string
-    {
-        return Response::$statusTexts[$statusCode] ?? 'Unknown Error';
-    }
+    // private function getErrorPhrase(int $statusCode): string
+    // {
+    //     return Response::$statusTexts[$statusCode] ?? 'Unknown Error';
+    // }
 }

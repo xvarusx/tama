@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Mapper;
 
 use App\Entity\Unit;
+use App\Entity\Product;
 
 final class UnitMapper
 {
@@ -19,7 +20,7 @@ final class UnitMapper
             'attributes' => [
                 'code' => $unit->getCode(),
                 'allowDecimal' => $unit->isAllowDecimal(),
-                'products' => [array_map(fn(Product $p) => $this->productMapper->toResource($p), $brand->getProducts()->toArray())],
+                'products' => [array_map(fn(Product $p) => $this->productMapper->toResource($p), $unit->getProducts()->toArray())],
                 'createdAt' => $unit->getCreatedAt()?->format(\DATE_ATOM),
                 'updatedAt' => $unit->getUpdatedAt()?->format(\DATE_ATOM),
             ],
