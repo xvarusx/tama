@@ -49,26 +49,30 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: "8.5"
           extensions: ctype, iconv, intl, mbstring, pdo_sqlite, sqlite3
           coverage: none
           tools: composer:v2
-
-      - name: Prepare environment
-        run: |
-          mkdir -p var
-          cp .env.test .env
 
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
         with:
           version: latest
 
+      - name: Check PHP version
+        run: php -v
+
+      - name: Check PHP extensions
+        run: php -m
+        
       - name: Install dependencies
         uses: ramsey/composer-install@v3
         with:
           working-directory: services/product-service
           composer-options: "--prefer-dist --no-progress --no-scripts"
+          
+      - name: Clear Symfony cache
+        run: php bin/console cache:clear --env=test
 
       - name: Static analysis
         run: composer stan
