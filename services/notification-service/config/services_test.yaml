@@ -1,0 +1,10 @@
+# Test-only container overrides.
+#
+# Task 4 replaces the real AuthServiceClient with a test double here; this file
+# is loaded automatically in the test environment (KernelTestCase / WebTestCase).
+parameters: {}
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true

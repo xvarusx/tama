@@ -5,6 +5,7 @@ include:
   - docker-compose.contact.yml
   - docker-compose.inventory.yml
   - docker-compose.product.yml
+  - docker-compose.notification.yml
 
 networks:
   microservice_net:
@@ -17,6 +18,8 @@ volumes:
   inventory_db_data:
   product_db_data:
   product_redis_data:
+  notification_db_data:
+  notification_redis_data:
   rabbitmq_data:
   rabbitmq_logs:
   redis_data:

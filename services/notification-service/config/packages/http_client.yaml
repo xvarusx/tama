@@ -1,0 +1,5 @@
+# Outbound HTTP calls (auth service lookups) should fail fast rather than hang a worker.
+framework:
+    http_client:
+        default_options:
+            timeout: 5
