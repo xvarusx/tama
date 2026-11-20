@@ -11,6 +11,7 @@ use App\Enum\ContactType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class ContactRepositoryTest extends KernelTestCase
 {
@@ -23,8 +24,10 @@ final class ContactRepositoryTest extends KernelTestCase
         $schemaTool->dropSchema($metadata);
         $schemaTool->createSchema($metadata);
 
-        $contact = new Contact('Northwind Traders', 42, ContactType::SUPPLIER);
-        $contact->markUpdatedBy(84);
+        $creator = Uuid::v5(Uuid::fromString('6ba7b811-9dad-11d1-80b4-00c04fd430c8'), 'repo-test-user-42');
+        $updater = Uuid::v5(Uuid::fromString('6ba7b811-9dad-11d1-80b4-00c04fd430c8'), 'repo-test-user-84');
+        $contact = new Contact('Northwind Traders', $creator, ContactType::SUPPLIER);
+        $contact->markUpdatedBy($updater);
         $entityManager->persist($contact);
         $entityManager->flush();
         $id = $contact->getId();
@@ -33,8 +36,8 @@ final class ContactRepositoryTest extends KernelTestCase
         $reloaded = $entityManager->getRepository(Contact::class)->find($id);
 
         self::assertInstanceOf(Contact::class, $reloaded);
-        self::assertSame(42, $reloaded->getCreatedBy());
-        self::assertSame(84, $reloaded->getUpdatedBy());
+        self::assertSame($creator->toRfc4122(), $reloaded->getCreatedBy()?->toRfc4122());
+        self::assertSame($updater->toRfc4122(), $reloaded->getUpdatedBy()?->toRfc4122());
         self::assertSame(ContactType::SUPPLIER, $reloaded->getContactType());
     }
 
@@ -49,7 +52,7 @@ final class ContactRepositoryTest extends KernelTestCase
 
         (new AppFixtures())->load($entityManager);
 
-        self::assertCount(4, $entityManager->getRepository(Contact::class)->findAll());
-        self::assertCount(7, $entityManager->getRepository(ContactAuditEntry::class)->findAll());
+        self::assertCount(30, $entityManager->getRepository(Contact::class)->findAll());
+        self::assertCount(30, $entityManager->getRepository(ContactAuditEntry::class)->findAll());
     }
 }

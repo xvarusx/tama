@@ -39,8 +39,8 @@ class Notification
     private ?DateTimeImmutable $archivedAt = null;
 
     public function __construct(
-        #[ORM\Column]
-        private int $recipientId,
+        #[ORM\Column(type: 'uuid')]
+        private Uuid $recipientId,
         #[ORM\Column(length: 120)]
         private string $type,
         #[ORM\Column(length: 255)]
@@ -67,7 +67,7 @@ class Notification
         return $this->id;
     }
 
-    public function getRecipientId(): int
+    public function getRecipientId(): Uuid
     {
         return $this->recipientId;
     }

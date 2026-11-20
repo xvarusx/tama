@@ -10,16 +10,16 @@ export default defineConfig(({ mode }) => {
   // The nginx gateway exposes every service under /api/*.
   const apiTarget = env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8081"
   // Optional direct product-service target for host-only development. When it
-  // is unset, /api/product/* goes through the gateway, which rewrites /api/v1.
+  // is unset, /api/products/* goes through the gateway, which rewrites /api/v1.
   const productsTarget = env.VITE_PRODUCTS_API_URL
   const proxy = {
     ...(productsTarget
       ? {
-          "/api/product": {
+          "/api/products": {
             target: productsTarget,
             changeOrigin: true,
             rewrite: (requestPath: string) =>
-              requestPath.replace(/^\/api\/product/, "/api/v1"),
+              requestPath.replace(/^\/api\/products/, "/api/v1"),
           },
         }
       : {}),

@@ -27,9 +27,13 @@ security:
                 - App\Security\ApiKeyAuthenticator
 
     access_control:
+        # The internal directory is authorized by X-INTERNAL-TOKEN inside the controller,
+        # not by a user session. It is also hidden from the gateway.
+        - { path: ^/api/authenticator/internal/, roles: PUBLIC_ACCESS }
         - { path: ^/api/authenticator/user_register$, roles: PUBLIC_ACCESS }
         - { path: ^/api/authenticator/user_login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/authenticator/verify/email$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/doc$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:

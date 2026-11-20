@@ -112,7 +112,7 @@ export function ProductFormSheet({
   const [media, setMedia] = useState<ProductMedia[]>(
     product?.attributes.media ?? [],
   )
-  const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([])
+  const [removedMediaIds, setRemovedMediaIds] = useState<string[]>([])
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
   const [imageError, setImageError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -251,7 +251,7 @@ export function ProductFormSheet({
     })
   }
 
-  function removeExistingImage(mediaId: number) {
+  function removeExistingImage(mediaId: string) {
     setMedia((current) => current.filter((item) => item.id !== mediaId))
     setRemovedMediaIds((current) =>
       current.includes(mediaId) ? current : [...current, mediaId],

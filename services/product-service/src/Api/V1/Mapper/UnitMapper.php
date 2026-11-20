@@ -15,7 +15,7 @@ final readonly class UnitMapper
     {
 
         return [
-            'id' => (int)$unit->getId(),
+            'id' => $unit->getId()->toRfc4122(),
             'attributes' => [
                 'code' => $unit->getCode(),
                 'allowDecimal' => $unit->isAllowDecimal(),

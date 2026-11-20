@@ -3,22 +3,22 @@
 namespace App\Entity;
 
 use App\Repository\InventoryRepository;
-use App\Util\Decimal;
+use App\Utils\Decimal;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: InventoryRepository::class)]
 class Inventory
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid')]
     #[Groups(['inventory:read'])]
-    private ?int $id = null;
-
+    private Uuid $id;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 3)]
     #[Groups(['inventory:read'])]
@@ -34,23 +34,23 @@ class Inventory
 
     #[ORM\Column]
     #[Groups(['inventory:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    private ?DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
     #[Groups(['inventory:read'])]
-    private ?\DateTimeImmutable $updatedAt = null;
+    private ?DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $deletedAt = null;
+    private ?DateTimeImmutable $deletedAt = null;
 
     #[ORM\Version]
     #[ORM\Column(type: Types::INTEGER)]
     #[Groups(['inventory:read'])]
     private int $version = 1;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid')]
     #[Groups(['inventory:read'])]
-    private ?int $productId = null;
+    private ?Uuid $productId = null;
 
     /** @var Collection<int, InventoryMovement> */
     #[ORM\OneToMany(mappedBy: 'inventory', targetEntity: InventoryMovement::class, cascade: ['remove'], orphanRemoval: true)]
@@ -58,10 +58,11 @@ class Inventory
 
     public function __construct()
     {
+        $this->id = Uuid::v7();
         $this->movements = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }
@@ -102,36 +103,36 @@ class Inventory
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
+    public function getUpdatedAt(): ?DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
+    public function setUpdatedAt(DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
 
         return $this;
     }
 
-    public function getDeletedAt(): ?\DateTimeImmutable
+    public function getDeletedAt(): ?DateTimeImmutable
     {
         return $this->deletedAt;
     }
 
-    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
+    public function setDeletedAt(?DateTimeImmutable $deletedAt): static
     {
         $this->deletedAt = $deletedAt;
 
@@ -143,12 +144,12 @@ class Inventory
         return $this->version;
     }
 
-    public function getProductId(): ?int
+    public function getProductId(): ?Uuid
     {
         return $this->productId;
     }
 
-    public function setProductId(int $productId): static
+    public function setProductId(Uuid $productId): static
     {
         $this->productId = $productId;
 

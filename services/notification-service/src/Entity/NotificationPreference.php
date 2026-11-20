@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Enum\Channel;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'notification_preferences')]
@@ -13,27 +14,28 @@ use Doctrine\ORM\Mapping as ORM;
 class NotificationPreference
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $id;
 
     public function __construct(
-        #[ORM\Column]
-        private int $userId,
+        #[ORM\Column(type: 'uuid')]
+        private Uuid $userId,
         #[ORM\Column(length: 120)]
         private string $type,
         #[ORM\Column(length: 20, enumType: Channel::class)]
         private Channel $channel,
         #[ORM\Column]
         private bool $enabled
-    ) {}
+    ) {
+        $this->id = Uuid::v7();
+    }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }
 
-    public function getUserId(): int
+    public function getUserId(): Uuid
     {
         return $this->userId;
     }

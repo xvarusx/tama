@@ -3,17 +3,22 @@ FROM php:8.4-fpm-alpine
 
 # Runtime libraries
 RUN apk add --no-cache \
-    icu-libs
+    icu-libs \
+    rabbitmq-c \
+    curl
 
 # Install PHP extensions
 RUN set -eux; \
     apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
-        icu-dev; \
+        icu-dev \
+        rabbitmq-c-dev; \
     docker-php-ext-install -j"$(nproc)" \
         intl \
         pdo_mysql \
         opcache; \
+    printf "\n" | pecl install amqp; \
+    docker-php-ext-enable amqp; \
     apk del .build-deps
 
 # PHP configuration
@@ -45,6 +50,10 @@ COPY --chown=www-data:www-data . .
 # Prepare Symfony writable directories
 RUN mkdir -p var/cache var/log \
     && chown -R www-data:www-data var
+
+# Service registration helper (infra additional build context)
+COPY --from=infra base/scripts/register.sh /usr/local/bin/register.sh
+RUN chmod +x /usr/local/bin/register.sh
 
 EXPOSE 9000
 

@@ -6,6 +6,7 @@ namespace App\Utils;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * "Wireless Mice" -> "wireless-mice", and "wireless-mice-2" if the slug is already taken.
@@ -18,8 +19,8 @@ final readonly class SlugGenerator
         private EntityManagerInterface $em,
     ) {}
 
-    /** @param class-string $entityClass @param int|null $ignoreId the entity being updated, so it does not clash with itself */
-    public function generate(string $text, string $entityClass, ?int $ignoreId = null): string
+    /** @param class-string $entityClass @param string|null $ignoreId UUID of the entity being updated, so it does not clash with itself */
+    public function generate(string $text, string $entityClass, ?string $ignoreId = null): string
     {
         // names with no latin letters (e.g. Arabic) need ext-intl to be transliterated; otherwise fall back
         $base = $this->slugger->slug($text)->lower()->toString() ?: 'item';
@@ -32,7 +33,7 @@ final readonly class SlugGenerator
             ->setParameter('like', $base . '-%');
 
         if ($ignoreId !== null) {
-            $qb->andWhere('e.id != :id')->setParameter('id', $ignoreId);
+            $qb->andWhere('e.id != :id')->setParameter('id', Uuid::fromString($ignoreId), 'uuid');
         }
 
         return Uniquify::make($base, $qb->getQuery()->getSingleColumnResult());

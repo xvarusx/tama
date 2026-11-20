@@ -9,6 +9,7 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Uid\Uuid;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\InvalidSignatureException;
 
 final class EmailVerifierTest extends KernelTestCase
@@ -37,7 +38,8 @@ final class EmailVerifierTest extends KernelTestCase
         $query = [];
         parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
 
-        self::assertSame((string) $user->getId(), $query['id'] ?? null);
+        self::assertSame($user->getId()->toRfc4122(), $query['id'] ?? null);
+        self::assertTrue(Uuid::isValid($query['id'] ?? ''));
         self::assertArrayHasKey('token', $query);
         self::assertArrayHasKey('expires', $query);
         self::assertArrayHasKey('signature', $query);

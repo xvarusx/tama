@@ -16,12 +16,16 @@ services:
       CONSUL_HTTP_ADDR: "http://autodiscovery:8500"
       CONSUL_SERVICE_NAME: "authentication-service"
       CONSUL_SERVICE_PORT: "9000"
+      AUTH_INTERNAL_TOKEN: "${AUTH_INTERNAL_TOKEN}"
     entrypoint:
       - /bin/sh
       - -c
       - php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
     expose:
       - "9000"
+    volumes:
+      - ./services/authentication-service:/srv/app
+      - ./services/authentication-service/docker/php.dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
     networks:
       - microservice_net
     develop:
@@ -84,7 +88,11 @@ services:
     networks:
       - microservice_net
     healthcheck:
-      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent',
+        ]
       interval: 10s
       timeout: 5s
       retries: 10

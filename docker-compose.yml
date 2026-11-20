@@ -6,6 +6,9 @@ include:
   - docker-compose.inventory.yml
   - docker-compose.product.yml
   - docker-compose.notification.yml
+  - docker-compose.order.yml
+  - docker-compose.payment.yml
+  - docker-compose.invoice.yml
 
 networks:
   microservice_net:
@@ -20,6 +23,12 @@ volumes:
   product_redis_data:
   notification_db_data:
   notification_redis_data:
+  order_db_data:
+  order_redis_data:
+  payment_db_data:
+  payment_redis_data:
+  invoice_db_data:
+  invoice_redis_data:
   rabbitmq_data:
   rabbitmq_logs:
   redis_data:

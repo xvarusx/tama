@@ -23,6 +23,5 @@ final readonly class CreateContactInput
         public ?string $address = null,
         #[Assert\Length(max: 50)]
         public ?string $taxNumber = null,
-    ) {
-    }
+    ) {}
 }

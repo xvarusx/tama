@@ -12,8 +12,8 @@ use App\Api\V1\Request\CreateProductRequest;
 use App\Api\V1\Request\ListProductsQuery;
 use App\Api\V1\Request\UpdateProductRequest;
 use App\Entity\Product;
-use App\Hundler\Product\CreateProductHandler;
-use App\Hundler\Product\UpdateProductHandler;
+use App\Handler\Product\CreateProductHandler;
+use App\Handler\Product\UpdateProductHandler;
 use App\Media\MediaStorage;
 use App\Repository\ProductRepository;
 use App\Utils\ApiResponse;
@@ -29,6 +29,8 @@ use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[Route('/products', name: 'api_v1_product_')]
@@ -94,7 +96,7 @@ final class ProductsController extends AbstractController
     }
 
     /** Show a single product by its id, including its variants and media. */
-    #[Route('/{id}', name: 'show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[Route('/{id}', name: 'show', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
     #[OA\Response(
         response: 200,
         description: 'The requested product.',
@@ -107,9 +109,9 @@ final class ProductsController extends AbstractController
         ),
     )]
     #[OA\Response(response: 404, description: 'Product not found.')]
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
-        $product = $this->products->find($id) ?? throw $this->createNotFoundException('Product not found.');
+        $product = $this->products->find(Uuid::fromString($id)) ?? throw $this->createNotFoundException('Product not found.');
 
         return new JsonResponse(ApiResponse::success($this->mapper->toResource($product)));
     }
@@ -150,7 +152,7 @@ final class ProductsController extends AbstractController
 
         $response->headers->set('Location', $this->generateUrl(
             'api_v1_product_show',
-            ['id' => $product->getId()],
+            ['id' => $product->getId()->toRfc4122()],
             UrlGeneratorInterface::ABSOLUTE_URL,
         ));
 
@@ -165,7 +167,7 @@ final class ProductsController extends AbstractController
      * are created, and omitted variants are deleted. Omitting `variants` leaves
      * them untouched.
      */
-    #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID], methods: ['PUT'])]
     #[OA\Response(
         response: 200,
         description: 'Product updated. The Content-Location header points to the resource.',
@@ -184,7 +186,7 @@ final class ProductsController extends AbstractController
         description: 'A variant SKU is already used.',
         content: new OA\JsonContent(ref: new Model(type: ErrorDocument::class)),
     )]
-    public function update(int $id, #[MapRequestPayload] UpdateProductRequest $payload): JsonResponse
+    public function update(string $id, #[MapRequestPayload] UpdateProductRequest $payload): JsonResponse
     {
         $product = $this->findOr404($id);
 
@@ -199,7 +201,7 @@ final class ProductsController extends AbstractController
         // Content-Location keeps the same information without altering the status.
         $response->headers->set('Content-Location', $this->generateUrl(
             'api_v1_product_show',
-            ['id' => $product->getId()],
+            ['id' => $product->getId()->toRfc4122()],
             UrlGeneratorInterface::ABSOLUTE_URL,
         ));
 
@@ -207,10 +209,10 @@ final class ProductsController extends AbstractController
     }
 
     /** Delete a product together with its variants, media rows and stored files. */
-    #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID], methods: ['DELETE'])]
     #[OA\Response(response: 204, description: 'Product deleted.')]
     #[OA\Response(response: 404, description: 'Product not found.')]
-    public function delete(int $id): Response
+    public function delete(string $id): Response
     {
         $product = $this->findOr404($id);
         $media = $product->getMedia()->toArray();
@@ -228,7 +230,7 @@ final class ProductsController extends AbstractController
         return new Response(null, Response::HTTP_NO_CONTENT);
     }
 
-    private function findOr404(int $id): Product
+    private function findOr404(string $id): Product
     {
         return $this->products->findActiveById($id) ?? throw $this->createNotFoundException('Product not found.');
     }

@@ -18,16 +18,18 @@ final readonly class CreateProductRequest
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
         public string $name,
-        #[Assert\Positive]
-        public int $brandId,
-        #[Assert\Positive]
-        public int $unitId,
+        #[Assert\NotBlank]
+        #[Assert\Uuid]
+        public string $brandId,
+        #[Assert\NotBlank]
+        #[Assert\Uuid]
+        public string $unitId,
         #[Assert\Count(min: 1, max: 100)]
         #[Assert\Valid]
         public array $variants,
         #[Assert\Length(max: 5000)]
         public ?string $description = null,
-        #[Assert\Positive]
-        public ?int $categoryId = null,
+        #[Assert\Uuid]
+        public ?string $categoryId = null,
     ) {}
 }

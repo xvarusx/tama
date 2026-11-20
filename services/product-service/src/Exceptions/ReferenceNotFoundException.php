@@ -7,9 +7,9 @@ namespace App\Exceptions;
 /** A brand, unit or category id in the request does not exist. */
 final class ReferenceNotFoundException extends ApiException
 {
-    public function __construct(string $what, int $id)
+    public function __construct(string $what, string $id)
     {
-        parent::__construct(sprintf('%s %d does not exist.', $what, $id));
+        parent::__construct(sprintf('%s %s does not exist.', $what, $id));
     }
 
     public function getErrorCode(): string

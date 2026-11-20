@@ -111,6 +111,10 @@ services:
       AUTH_SERVICE_URL: "http://authentication-service-web"
       AUTH_INTERNAL_TOKEN: "${AUTH_INTERNAL_TOKEN:-change_internal_token}"
     command: ["php", "bin/console", "messenger:consume", "notification_events", "--time-limit=3600", "--memory-limit=128M"]
+    volumes:
+      - ./services/notification-service:/srv/app
+    healthcheck:
+      disable: true
     networks:
       - microservice_net
     develop:
@@ -163,6 +167,10 @@ services:
       - /bin/sh
       - -c
       - "while true; do php bin/console app:deliveries:process --limit=50; sleep 10; done"
+    volumes:
+      - ./services/notification-service:/srv/app
+    healthcheck:
+      disable: true
     networks:
       - microservice_net
     develop:

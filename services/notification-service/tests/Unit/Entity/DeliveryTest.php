@@ -11,6 +11,7 @@ use App\Enum\Channel;
 use App\Enum\DeliveryStatus;
 use App\Enum\Severity;
 use App\Exceptions\InvalidDeliveryTransition;
+use App\Utils\DemoUserUuids;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;
@@ -216,7 +217,7 @@ final class DeliveryTest extends TestCase
     private function createNotification(): Notification
     {
         return new Notification(
-            7,
+            Uuid::fromString(DemoUserUuids::forNumber(7)),
             'payment.installment.overdue',
             'Invoice F-012 overdue',
             'Please settle invoice F-012.',

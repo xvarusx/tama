@@ -30,7 +30,7 @@ final readonly class UpdateVariantRequest
 
         /** e.g. {"size": "M", "color": "red"} */
         public ?array $options = null,
-        #[Assert\Positive]
-        public ?int $id = null,
+        #[Assert\Uuid]
+        public ?string $id = null,
     ) {}
 }

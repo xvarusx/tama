@@ -18,6 +18,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 final class ProductMediaControllerTest extends WebTestCase
 {
@@ -76,7 +77,7 @@ final class ProductMediaControllerTest extends WebTestCase
     {
         $product = $this->seedProduct();
 
-        $this->client->request('POST', '/api/v1/products/' . $product->getId() . '/media', [], [
+        $this->client->request('POST', '/api/v1/products/' . $product->getId()->toRfc4122() . '/media', [], [
             'file' => $this->png(),
         ]);
 
@@ -88,7 +89,7 @@ final class ProductMediaControllerTest extends WebTestCase
         self::assertSame('image/png', $body['data']['kind']);
 
         // The product contract exposes the uploaded image.
-        $this->client->request('GET', '/api/v1/products/' . $product->getId());
+        $this->client->request('GET', '/api/v1/products/' . $product->getId()->toRfc4122());
         $body = json_decode($this->client->getResponse()->getContent(), true);
         self::assertCount(1, $body['data']['attributes']['media']);
         self::assertSame($mediaId, $body['data']['attributes']['media'][0]['id']);
@@ -97,7 +98,7 @@ final class ProductMediaControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
         self::assertStringStartsWith('image/png', (string)$this->client->getResponse()->headers->get('Content-Type'));
 
-        $media = static::getContainer()->get(ProductMediaRepository::class)->find($mediaId);
+        $media = static::getContainer()->get(ProductMediaRepository::class)->find(Uuid::fromString($mediaId));
         self::assertInstanceOf(ProductMedia::class, $media);
         $path = static::getContainer()->get(MediaStorage::class)->absolutePath($media);
         self::assertFileExists($path);
@@ -114,7 +115,7 @@ final class ProductMediaControllerTest extends WebTestCase
     {
         $product = $this->seedProduct();
 
-        $this->client->request('POST', '/api/v1/products/' . $product->getId() . '/media', [], [
+        $this->client->request('POST', '/api/v1/products/' . $product->getId()->toRfc4122() . '/media', [], [
             'file' => $this->uploadedFile('not an image', 'notes.txt', 'text/plain'),
         ]);
 
@@ -125,7 +126,7 @@ final class ProductMediaControllerTest extends WebTestCase
     {
         $product = $this->seedProduct();
 
-        $this->client->request('POST', '/api/v1/products/' . $product->getId() . '/media', [], [
+        $this->client->request('POST', '/api/v1/products/' . $product->getId()->toRfc4122() . '/media', [], [
             'file' => $this->uploadedFile(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1"/></svg>',
                 'pixel.svg',

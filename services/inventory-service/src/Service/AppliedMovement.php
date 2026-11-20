@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Service;
 
 use App\Entity\InventoryMovement;
@@ -10,6 +12,5 @@ final readonly class AppliedMovement
         public InventoryMovement $movement,
         /** false when the movement was a replay of an already-recorded reference */
         public bool $created,
-    ) {
-    }
+    ) {}
 }

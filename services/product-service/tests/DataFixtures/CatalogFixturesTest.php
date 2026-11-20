@@ -13,6 +13,7 @@ use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Uid\Uuid;
 
 final class CatalogFixturesTest extends KernelTestCase
 {
@@ -44,6 +45,13 @@ final class CatalogFixturesTest extends KernelTestCase
         self::assertSame(3, $em->getRepository(Unit::class)->count([]));
         self::assertSame(3, $em->getRepository(Category::class)->count([]));
         self::assertSame(8, $em->getRepository(Product::class)->count([]));
+
+        // Fixture-loaded ids are UUIDs, and the product's references are UUIDs too.
+        $product = $em->getRepository(Product::class)->findOneBy([]);
+        self::assertInstanceOf(Product::class, $product);
+        self::assertTrue(Uuid::isValid($product->getId()->toRfc4122()));
+        self::assertTrue(Uuid::isValid($product->getBrand()->getId()->toRfc4122()));
+        self::assertTrue(Uuid::isValid($product->getUnit()->getId()->toRfc4122()));
 
         $multiVariant = $em->createQueryBuilder()
             ->select('p.id')

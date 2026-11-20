@@ -3,7 +3,8 @@ import { api } from "@/lib/api";
 import { setAuthToken, removeAuthToken } from "@/lib/auth-cookie";
 
 export interface AuthUser {
-  id: number;
+  id: string;
+  fullName: string;
   email: string;
   roles: string[];
 }
@@ -14,7 +15,7 @@ interface LoginResponse {
 }
 
 interface RegisterResponse {
-  id: number;
+  id: string;
   fullName: string;
   email: string;
 }

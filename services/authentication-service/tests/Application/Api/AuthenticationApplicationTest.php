@@ -6,6 +6,7 @@ use App\Tests\Support\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 final class AuthenticationApplicationTest extends WebTestCase
 {
@@ -30,7 +31,8 @@ final class AuthenticationApplicationTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $loginResponse = $this->responseJson();
         self::assertArrayHasKey('token', $loginResponse);
-        self::assertIsInt($loginResponse['user']['id']);
+        self::assertIsString($loginResponse['user']['id']);
+        self::assertTrue(Uuid::isValid($loginResponse['user']['id']));
         self::assertSame('demo@example.com', $loginResponse['user']['email']);
 
         $token = $loginResponse['token'];

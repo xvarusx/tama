@@ -9,3 +9,10 @@
 
 controllers:
     resource: routing.controllers
+
+api_v1:
+    resource:
+        path: ../src/Api/V1/Controller/
+        namespace: App\Api\V1\Controller
+    type: attribute
+    prefix: /api/v1

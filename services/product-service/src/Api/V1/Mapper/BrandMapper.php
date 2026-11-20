@@ -15,7 +15,7 @@ final readonly class BrandMapper
     {
 
         return [
-            'id' => (int)$brand->getId(),
+            'id' => $brand->getId()->toRfc4122(),
             'attributes' => [
                 'name' => $brand->getName(),
                 'slug' => $brand->getSlug(),

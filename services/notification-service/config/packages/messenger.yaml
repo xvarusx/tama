@@ -31,7 +31,7 @@ framework:
                 dsn: 'doctrine://default?queue_name=failed'
 
         routing:
-            # Message routing is added by the tasks that declare the messages.
+            App\Message\NotificationRequested: notification_events
 
 when@test:
     framework:

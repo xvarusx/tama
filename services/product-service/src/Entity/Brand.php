@@ -7,6 +7,7 @@ use App\Traits\ShareableTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: BrandRepository::class)]
@@ -15,9 +16,8 @@ class Brand
     use ShareableTrait;
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $id;
 
     #[ORM\Column(length: 255, unique: true)]
     private ?string $name = null;
@@ -33,6 +33,7 @@ class Brand
 
     public function __construct(?string $name = null, ?string $slug = null)
     {
+        $this->id = Uuid::v7();
         $this->products = new ArrayCollection();
         if ($name !== null) {
             $this->name = $name;
@@ -42,7 +43,7 @@ class Brand
         }
     }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }

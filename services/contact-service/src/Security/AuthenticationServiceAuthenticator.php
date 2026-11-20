@@ -17,6 +17,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -27,12 +28,17 @@ final class AuthenticationServiceAuthenticator extends AbstractAuthenticator imp
         private readonly HttpClientInterface $httpClient,
         #[Autowire('%env(AUTHENTICATION_SERVICE_URL)%')]
         private readonly string $authenticationServiceUrl,
-    ) {
-    }
+    ) {}
 
     public function supports(Request $request): ?bool
     {
-        return str_starts_with($request->getPathInfo(), '/api/');
+        $path = $request->getPathInfo();
+        // Swagger UI is documentation only and must stay reachable without a token.
+        if ('/api/doc' === $path) {
+            return false;
+        }
+
+        return str_starts_with($path, '/api/');
     }
 
     public function authenticate(Request $request): Passport
@@ -45,7 +51,7 @@ final class AuthenticationServiceAuthenticator extends AbstractAuthenticator imp
         try {
             $response = $this->httpClient->request(
                 'GET',
-                rtrim($this->authenticationServiceUrl, '/').'/api/authenticator/me',
+                rtrim($this->authenticationServiceUrl, '/') . '/api/authenticator/me',
                 [
                     'headers' => ['X-AUTH-TOKEN' => $token],
                     'timeout' => 3,
@@ -66,13 +72,13 @@ final class AuthenticationServiceAuthenticator extends AbstractAuthenticator imp
             throw new ServiceUnavailableHttpException(null, 'Authentication service is unavailable.', $e);
         }
 
-        if (!isset($userData['id']) || !is_int($userData['id']) || $userData['id'] < 1) {
+        if (!isset($userData['id']) || !is_string($userData['id']) || !Uuid::isValid($userData['id'])) {
             throw new ServiceUnavailableHttpException(null, 'Authentication service returned an invalid user.');
         }
 
         $user = new ContactUser($userData['id']);
 
-        return new SelfValidatingPassport(new UserBadge($user->getUserIdentifier(), static fn (): ContactUser => $user));
+        return new SelfValidatingPassport(new UserBadge($user->getUserIdentifier(), static fn(): ContactUser => $user));
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response

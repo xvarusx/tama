@@ -26,6 +26,9 @@ services:
       - php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && exec /usr/local/bin/register.sh
     expose:
       - "9000"
+    volumes:
+      - ./services/contact-service:/srv/app
+      - ./services/contact-service/docker/php.dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
     networks:
       - microservice_net
     develop:

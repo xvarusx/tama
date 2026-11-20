@@ -5,16 +5,17 @@ declare(strict_types=1);
 use PhpCsFixer\Config;
 use PhpCsFixer\Finder;
 
-return (new Config())
-    ->setRiskyAllowed(true)
+return new Config()
+    ->setRiskyAllowed(false)
+        ->setCacheFile(__DIR__ . '/../../var/.php-cs-fixer.cache')
+
     ->setRules([
-        '@Symfony' => true,
+        '@auto' => true,
     ])
+    // 💡 by default, Fixer looks for `*.php` files excluding `./vendor/` - here, you can groom this config
     ->setFinder(
-        (new Finder())
+        new Finder()
+            // 💡 root folder to check
             ->in(__DIR__)
-            ->exclude('var')
-            ->exclude('vendor')
-            ->exclude('node_modules')
     )
 ;

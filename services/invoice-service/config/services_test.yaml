@@ -1,0 +1,46 @@
+parameters:
+    # Tests never write outside the disposable cache directory.
+    invoice.payment_term_days: 30
+
+services:
+    # Services that tests resolve directly from the container. Private,
+    # unused services are inlined away at compile time otherwise.
+    App\Service\InvoiceNumberGenerator:
+        public: true
+        autowire: true
+
+    App\Handler\Invoice\CreateDraftInvoiceHandler:
+        public: true
+        autowire: true
+
+    App\Handler\Invoice\UpdateDraftInvoiceHandler:
+        public: true
+        autowire: true
+
+    App\Handler\Invoice\IssueInvoiceHandler:
+        public: true
+        autowire: true
+
+    App\Handler\Invoice\VoidInvoiceHandler:
+        public: true
+        autowire: true
+
+    App\Handler\Invoice\IssueCreditNoteHandler:
+        public: true
+        autowire: true
+
+    App\Handler\Invoice\ApplyPaymentHandler:
+        public: true
+        autowire: true
+
+    App\MessageHandler\OrderReadyForInvoiceMessageHandler:
+        public: true
+        autowire: true
+
+    App\MessageHandler\PaymentReceivedMessageHandler:
+        public: true
+        autowire: true
+
+    App\Console\PublishOutboxCommand:
+        public: true
+        autowire: true

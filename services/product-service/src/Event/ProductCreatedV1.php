@@ -23,15 +23,15 @@ final class ProductCreatedV1
         $category = $product->getCategory();
 
         return new OutboxEvent(self::TYPE, self::VERSION, [
-            'productId' => $product->getId(),
+            'productId' => $product->getId()->toRfc4122(),
             'name' => $product->getName(),
             'description' => $product->getDescription(),
-            'brand' => ['id' => $product->getBrand()->getId(), 'name' => $product->getBrand()->getName()],
-            'unit' => ['id' => $product->getUnit()->getId(), 'code' => $product->getUnit()->getCode()],
-            'category' => $category ? ['id' => $category->getId(), 'name' => $category->getName()] : null,
+            'brand' => ['id' => $product->getBrand()->getId()->toRfc4122(), 'name' => $product->getBrand()->getName()],
+            'unit' => ['id' => $product->getUnit()->getId()->toRfc4122(), 'code' => $product->getUnit()->getCode()],
+            'category' => $category ? ['id' => $category->getId()->toRfc4122(), 'name' => $category->getName()] : null,
             'variants' => array_values(array_map(
                 static fn(ProductVariant $v): array => [
-                    'variantId' => $v->getId(),
+                    'variantId' => $v->getId()->toRfc4122(),
                     'sku' => $v->getSku(),
                     'barcode' => $v->getBarcode(),
                     'options' => $v->getOptions(),

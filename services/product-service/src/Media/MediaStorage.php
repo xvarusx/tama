@@ -40,8 +40,8 @@ final readonly class MediaStorage
         $extension = self::ALLOWED_MIME_TYPES[$mime] ?? 'bin';
 
         $relativePath = sprintf(
-            '%d/%s.%s',
-            $product->getId(),
+            '%s/%s.%s',
+            $product->getId()->toRfc4122(),
             bin2hex(random_bytes(16)),
             $extension,
         );
@@ -84,7 +84,7 @@ final readonly class MediaStorage
 
     private function absolutePathFor(string $relativePath): string
     {
-        if (preg_match('#\A\d+/[a-f0-9]{32}\.(?:jpg|png|webp|svg|bin)\z#', $relativePath) !== 1) {
+        if (preg_match('#\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-f0-9]{32}\.(?:jpg|png|webp|svg|bin)\z#', $relativePath) !== 1) {
             throw new InvalidArgumentException('Invalid product media path.');
         }
 

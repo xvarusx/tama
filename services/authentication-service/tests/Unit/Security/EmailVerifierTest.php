@@ -13,20 +13,23 @@ use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\RawMessage;
+use Symfony\Component\Uid\Uuid;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\InvalidSignatureException;
 
 final class EmailVerifierTest extends TestCase
 {
+    private const USER_ID = '0190f3d4-5b6c-7d8e-9f01-2a3b4c5d6e7f';
+
     public function testSendEmailConfirmationAddsTheSignedUrlAndExpiryContextToTheEmail(): void
     {
-        $signedUrl = 'https://example.com/api/authenticator/verify/email?id=42&token=token&expires=123';
+        $signedUrl = 'https://example.com/api/authenticator/verify/email?id='.self::USER_ID.'&token=token&expires=123';
         $helper = new FakeVerifyEmailHelper($signedUrl);
 
         $mailer = $this->capturingMailer();
         $verifier = new EmailVerifier($helper, $mailer, $this->createStub(EntityManagerInterface::class));
 
         $email = $this->confirmationEmail();
-        $verifier->sendEmailConfirmation('app_verify_email', $this->userWithId(42), $email);
+        $verifier->sendEmailConfirmation('app_verify_email', $this->userWithId(self::USER_ID), $email);
 
         self::assertSame($email, $mailer->sent);
         self::assertSame($signedUrl, $email->getContext()['signedUrl']);
@@ -34,9 +37,9 @@ final class EmailVerifierTest extends TestCase
         self::assertSame(['%count%' => 1], $email->getContext()['expiresAtMessageData']);
         self::assertSame([[
             'routeName' => 'app_verify_email',
-            'userId' => '42',
+            'userId' => self::USER_ID,
             'userEmail' => 'person@example.com',
-            'extraParams' => ['id' => '42'],
+            'extraParams' => ['id' => self::USER_ID],
         ]], $helper->generateSignatureCalls);
     }
 
@@ -49,14 +52,14 @@ final class EmailVerifierTest extends TestCase
             $this->createStub(EntityManagerInterface::class),
         );
 
-        $user = $this->userWithId(42);
+        $user = $this->userWithId(self::USER_ID);
         $request = Request::create('/api/authenticator/verify/email');
         $verifier->handleEmailConfirmation($request, $user);
 
         self::assertTrue($user->isVerified());
         self::assertSame([[
             'request' => $request,
-            'userId' => '42',
+            'userId' => self::USER_ID,
             'userEmail' => 'person@example.com',
         ]], $helper->validationCalls);
     }
@@ -72,7 +75,7 @@ final class EmailVerifierTest extends TestCase
             $this->createStub(EntityManagerInterface::class),
         );
 
-        $user = $this->userWithId(42);
+        $user = $this->userWithId(self::USER_ID);
 
         try {
             $verifier->handleEmailConfirmation(Request::create('/api/authenticator/verify/email'), $user);
@@ -91,12 +94,12 @@ final class EmailVerifierTest extends TestCase
             ->htmlTemplate('registration/confirmation_email.html.twig');
     }
 
-    private function userWithId(int $id): User
+    private function userWithId(string $id): User
     {
         $user = (new User())->setEmail('person@example.com');
 
         $idProperty = new \ReflectionProperty(User::class, 'id');
-        $idProperty->setValue($user, $id);
+        $idProperty->setValue($user, Uuid::fromString($id));
 
         return $user;
     }

@@ -1,25 +1,25 @@
 import { api } from "@/lib/api"
 
 export interface ProductBrand {
-  id: number
+  id: string
   name: string
   slug?: string
 }
 
 export interface ProductUnit {
-  id: number
+  id: string
   code: string
   allowDecimal?: boolean
 }
 
 export interface ProductCategory {
-  id: number
+  id: string
   name: string
   slug?: string
 }
 
 export interface ProductVariant {
-  id: number
+  id: string
   sku: string
   barcode: string | null
   options: Record<string, string> | null
@@ -28,7 +28,7 @@ export interface ProductVariant {
 }
 
 export interface ProductMedia {
-  id: number
+  id: string
   /** Relative to the product API base: /media/{id}. */
   url: string
   kind: string
@@ -36,7 +36,7 @@ export interface ProductMedia {
 }
 
 export interface Product {
-  id: number
+  id: string
   type: "product"
   attributes: {
     name: string
@@ -68,12 +68,12 @@ export interface ProductQuery {
   page: number
   pageSize: number
   search?: string
-  categoryId?: number
-  brandId?: number
+  categoryId?: string
+  brandId?: string
 }
 
 export interface VariantInput {
-  id?: number
+  id?: string
   sku: string
   costPrice: string
   sellingPrice: string
@@ -83,9 +83,9 @@ export interface VariantInput {
 
 export interface ProductInput {
   name: string
-  brandId: number
-  unitId: number
-  categoryId: number | null
+  brandId: string
+  unitId: string
+  categoryId: string | null
   description: string | null
   variants: VariantInput[]
 }
@@ -114,7 +114,7 @@ function unwrap<T>(envelope: ApiEnvelope<T>): T {
   return envelope.data
 }
 
-const BASE = "/api/product"
+const BASE = "/api/products"
 
 export async function getProducts(query: ProductQuery): Promise<ProductPage> {
   const params: Record<string, string | number> = {
@@ -143,7 +143,7 @@ export async function getProducts(query: ProductQuery): Promise<ProductPage> {
   }
 }
 
-export async function getProduct(id: number): Promise<Product> {
+export async function getProduct(id: string): Promise<Product> {
   const response = await api.get<ApiEnvelope<Product>>(`${BASE}/products/${id}`)
 
   return unwrap(response.data)
@@ -156,7 +156,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
 }
 
 export async function updateProduct(
-  id: number,
+  id: string,
   input: ProductUpdateInput,
 ): Promise<Product> {
   const response = await api.put<ApiEnvelope<Product>>(
@@ -167,7 +167,7 @@ export async function updateProduct(
   return unwrap(response.data)
 }
 
-export async function deleteProduct(id: number): Promise<void> {
+export async function deleteProduct(id: string): Promise<void> {
   await api.delete(`${BASE}/products/${id}`)
 }
 
@@ -213,7 +213,7 @@ export function productMediaUrl(media: ProductMedia): string {
 }
 
 export async function uploadProductMedia(
-  productId: number,
+  productId: string,
   file: File,
 ): Promise<ProductMedia> {
   const body = new FormData()
@@ -228,7 +228,7 @@ export async function uploadProductMedia(
   return unwrap(response.data)
 }
 
-export async function deleteProductMedia(mediaId: number): Promise<void> {
+export async function deleteProductMedia(mediaId: string): Promise<void> {
   await api.delete(`${BASE}/media/${mediaId}`)
 }
 

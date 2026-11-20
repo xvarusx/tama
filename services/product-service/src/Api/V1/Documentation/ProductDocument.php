@@ -8,7 +8,7 @@ namespace App\Api\V1\Documentation;
 final readonly class ProductDocument
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public ProductAttributesDocument $attributes,
         /** Resource type, always "product". */
         public string $type = 'product',

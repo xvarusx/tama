@@ -8,6 +8,7 @@ use App\Repository\UserRepository;
 use App\Security\EmailVerifier;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -17,8 +18,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Uid\Uuid;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
+#[OA\Tag(name: 'Registration', description: 'User registration and email verification endpoints')]
 final class ApiRegisterController extends AbstractController
 {
     public function __construct(
@@ -31,6 +34,48 @@ final class ApiRegisterController extends AbstractController
     }
 
     #[Route('/api/authenticator/user_register', name: 'app_api_user_register', methods: ['POST'])]
+    #[OA\Post(
+        operationId: 'registerUser',
+        tags: ['Registration'],
+        summary: 'Register a new user',
+        description: 'Creates the account and sends an email confirmation link.',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'password', 'fullName'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'user@example.com'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', minLength: 8, maxLength: 4096, example: 'CorrectHorse9!'),
+                    new OA\Property(property: 'fullName', type: 'string', example: 'Jane Doe'),
+                ],
+                type: 'object',
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_CREATED,
+                description: 'User created',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string', format: 'uuid', example: '0190f3d4-5b6c-7d8e-9f01-2a3b4c5d6e7f'),
+                        new OA\Property(property: 'fullName', type: 'string', example: 'Jane Doe'),
+                        new OA\Property(property: 'email', type: 'string', example: 'user@example.com'),
+                    ],
+                    type: 'object',
+                ),
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Request body is not valid JSON'),
+            new OA\Response(
+                response: Response::HTTP_CONFLICT,
+                description: 'An account with this email already exists',
+                content: new OA\JsonContent(
+                    properties: [new OA\Property(property: 'message', type: 'string', example: 'An account with this email already exists.')],
+                    type: 'object',
+                ),
+            ),
+            new OA\Response(response: Response::HTTP_UNPROCESSABLE_ENTITY, description: 'Invalid email, password or full name'),
+        ],
+    )]
     public function registerUser(Request $request): JsonResponse
     {
         try {
@@ -89,24 +134,45 @@ final class ApiRegisterController extends AbstractController
         }
 
         return $this->json([
-            'id' => $user->getId(),
+            'id' => $user->getId()->toRfc4122(),
             'fullName' => $user->getFullName(),
             'email' => $user->getEmail(),
         ], Response::HTTP_CREATED);
     }
 
     #[Route('/api/authenticator/verify/email', name: 'api_verify_email')]
+    #[OA\Get(
+        operationId: 'verifyUserEmail',
+        tags: ['Registration'],
+        summary: 'Verify a user email address',
+        description: 'Follows the signed link sent after registration.',
+        parameters: [
+            new OA\Parameter(name: 'id', description: 'UUID user ID', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid', example: '0190f3d4-5b6c-7d8e-9f01-2a3b4c5d6e7f')),
+        ],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Email verified',
+                content: new OA\JsonContent(
+                    properties: [new OA\Property(property: 'message', type: 'string', example: 'Your email address has been verified.')],
+                    type: 'object',
+                ),
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'A valid user id is required'),
+            new OA\Response(response: Response::HTTP_CONFLICT, description: 'Invalid or expired verification link'),
+        ],
+    )]
     public function verifyUserEmail(Request $request): JsonResponse
     {
         $userId = $request->query->get('id');
 
-        if (!is_string($userId) || !ctype_digit($userId)) {
+        if (!is_string($userId) || !Uuid::isValid($userId)) {
             return $this->json([
                 'message' => 'verify_email_error A valid user id is required.',
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $user = $this->userRepository->find((int) $userId);
+        $user = $this->userRepository->find(Uuid::fromString($userId));
 
         if (!$user instanceof User) {
             return $this->json([

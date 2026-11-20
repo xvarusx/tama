@@ -23,6 +23,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[Route('', name: 'api_v1_media_')]
@@ -42,7 +44,7 @@ final class ProductMediaController extends AbstractController
      * WebP and SVG images up to 5 MB are supported. The new image is appended
      * after the product's existing images.
      */
-    #[Route('/products/{id}/media', name: 'upload', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[Route('/products/{id}/media', name: 'upload', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[OA\RequestBody(
         required: true,
         content: new OA\MediaType(
@@ -75,7 +77,7 @@ final class ProductMediaController extends AbstractController
     #[OA\Response(response: 404, description: 'Product not found.')]
     #[OA\Response(response: 415, description: 'Unsupported image type.')]
     public function upload(
-        int $id,
+        string $id,
         Request $request,
         ProductRepository $products,
     ): JsonResponse {
@@ -114,7 +116,7 @@ final class ProductMediaController extends AbstractController
      * The response Content-Type matches the stored file. SVG responses are served
      * with a restrictive Content-Security-Policy so they cannot run scripts.
      */
-    #[Route('/media/{id}', name: 'show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[Route('/media/{id}', name: 'show', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
     #[OA\Response(
         response: 200,
         description: 'Raw image bytes. The Content-Type matches the stored file.',
@@ -124,9 +126,9 @@ final class ProductMediaController extends AbstractController
         ),
     )]
     #[OA\Response(response: 404, description: 'Media row or stored file not found.')]
-    public function show(int $id, ProductMediaRepository $mediaRepository): BinaryFileResponse
+    public function show(string $id, ProductMediaRepository $mediaRepository): BinaryFileResponse
     {
-        $media = $mediaRepository->find($id)
+        $media = $mediaRepository->find(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Media not found.');
 
         $path = $this->storage->absolutePath($media);
@@ -151,12 +153,12 @@ final class ProductMediaController extends AbstractController
     }
 
     /** Delete a product image, both its database row and its stored file. */
-    #[Route('/media/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/media/{id}', name: 'delete', requirements: ['id' => Requirement::UUID], methods: ['DELETE'])]
     #[OA\Response(response: 204, description: 'Image deleted.')]
     #[OA\Response(response: 404, description: 'Media not found.')]
-    public function delete(int $id, ProductMediaRepository $mediaRepository): Response
+    public function delete(string $id, ProductMediaRepository $mediaRepository): Response
     {
-        $media = $mediaRepository->find($id)
+        $media = $mediaRepository->find(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Media not found.');
 
         $product = $media->getProduct();
@@ -174,19 +176,21 @@ final class ProductMediaController extends AbstractController
     private function nextPosition(Product $product): int
     {
         $max = $this->em
-            ->createQuery('SELECT MAX(m.position) FROM ' . ProductMedia::class . ' m WHERE m.product = :product')
-            ->setParameter('product', $product)
+            ->createQuery('SELECT MAX(m.position) FROM ' . ProductMedia::class . ' m WHERE m.product = :productId')
+            // Bind with the explicit uuid type: an entity parameter would bind the
+            // UUID as a string and never match the 16-byte binary FK column.
+            ->setParameter('productId', $product->getId(), 'uuid')
             ->getSingleScalarResult();
 
         return $max === null ? 0 : ((int)$max) + 1;
     }
 
-    /** @return array{id: int|null, url: string, kind: string|null, position: int|null} */
+    /** @return array{id: string, url: string, kind: string|null, position: int|null} */
     private function toArray(ProductMedia $media): array
     {
         return [
-            'id' => $media->getId(),
-            'url' => '/media/' . $media->getId(),
+            'id' => $media->getId()->toRfc4122(),
+            'url' => '/media/' . $media->getId()->toRfc4122(),
             'kind' => $media->getKind(),
             'position' => $media->getPosition(),
         ];

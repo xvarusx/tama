@@ -8,7 +8,7 @@ final readonly class ProductResource
 {
     /** @param array<string, mixed> $attributes */
     public function __construct(
-        public int $id,
+        public string $id,
         public array $attributes,
         public string $type = 'product',
     ) {}

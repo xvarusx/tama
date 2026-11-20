@@ -8,6 +8,7 @@ use App\Entity\Notification;
 use App\Enum\NotificationStatus;
 use App\Enum\Severity;
 use App\Exceptions\InvalidNotificationTransition;
+use App\Utils\DemoUserUuids;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;
@@ -100,7 +101,8 @@ final class NotificationTest extends TestCase
         self::assertInstanceOf(Uuid::class, $notification->getId());
         self::assertSame(36, strlen($notification->getId()->toRfc4122()));
         self::assertInstanceOf(UuidV7::class, $notification->getId());
-        self::assertSame(7, $notification->getRecipientId());
+        self::assertInstanceOf(Uuid::class, $notification->getRecipientId());
+        self::assertSame(DemoUserUuids::forNumber(7), $notification->getRecipientId()->toRfc4122());
         self::assertSame('payment.installment.overdue', $notification->getType());
         self::assertSame('Invoice F-012 overdue', $notification->getTitle());
         self::assertSame('Please settle invoice F-012.', $notification->getBody());
@@ -124,7 +126,7 @@ final class NotificationTest extends TestCase
     public function testOptionalLinkAndDedupKeyDefaultToNull(): void
     {
         $notification = new Notification(
-            12,
+            Uuid::fromString(DemoUserUuids::forNumber(12)),
             'order.confirmed',
             'Order confirmed',
             'Your order is on its way.',
@@ -139,7 +141,7 @@ final class NotificationTest extends TestCase
     private function createNotification(bool $visibleInApp = true): Notification
     {
         return new Notification(
-            7,
+            Uuid::fromString(DemoUserUuids::forNumber(7)),
             'payment.installment.overdue',
             'Invoice F-012 overdue',
             'Please settle invoice F-012.',

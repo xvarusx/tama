@@ -17,6 +17,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ProductsControllerTest extends WebTestCase
 {
+    /** A well-formed UUID that is never persisted in these tests. */
+    private const string UNKNOWN_UUID = '01900000-0000-7000-8000-000000000000';
+
     private KernelBrowser $client;
 
     protected function setUp(): void
@@ -96,7 +99,7 @@ final class ProductsControllerTest extends WebTestCase
 
         self::assertSame('success', $response['status']);
         self::assertCount(1, $response['data']);
-        self::assertSame($product->getId(), $response['data'][0]['id']);
+        self::assertSame($product->getId()->toRfc4122(), $response['data'][0]['id']);
         self::assertSame('Alpha Product', $response['data'][0]['attributes']['name']);
         self::assertSame('Category Alpha', $response['data'][0]['attributes']['category']['name']);
     }
@@ -105,20 +108,20 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Gamma Product');
 
-        $this->client->request('GET', '/api/v1/products/' . $product->getId());
+        $this->client->request('GET', '/api/v1/products/' . $product->getId()->toRfc4122());
 
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
 
         $response = json_decode($this->client->getResponse()->getContent(), true);
 
         self::assertSame('success', $response['status']);
-        self::assertSame($product->getId(), $response['data']['id']);
+        self::assertSame($product->getId()->toRfc4122(), $response['data']['id']);
         self::assertSame('Gamma Product', $response['data']['attributes']['name']);
     }
 
     public function testShowMissingProductReturns404(): void
     {
-        $this->client->request('GET', '/api/v1/products/999999');
+        $this->client->request('GET', '/api/v1/products/' . self::UNKNOWN_UUID);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -133,9 +136,9 @@ final class ProductsControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'New Product',
-            'brandId' => $brand->getId(),
-            'unitId' => $unit->getId(),
-            'categoryId' => $category->getId(),
+            'brandId' => $brand->getId()->toRfc4122(),
+            'unitId' => $unit->getId()->toRfc4122(),
+            'categoryId' => $category->getId()->toRfc4122(),
             'description' => 'A new product',
             'variants' => [
                 [
@@ -159,12 +162,12 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Old Name');
 
-        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId()->toRfc4122(), [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'Renamed Product',
-            'brandId' => $product->getBrand()->getId(),
-            'unitId' => $product->getUnit()->getId(),
+            'brandId' => $product->getBrand()->getId()->toRfc4122(),
+            'unitId' => $product->getUnit()->getId()->toRfc4122(),
             'description' => 'Updated description',
         ]));
 
@@ -187,8 +190,8 @@ final class ProductsControllerTest extends WebTestCase
 
         $this->client->request('POST', '/api/v1/products', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'name' => 'Ghost Product',
-            'brandId' => 999999,
-            'unitId' => $unit->getId(),
+            'brandId' => self::UNKNOWN_UUID,
+            'unitId' => $unit->getId()->toRfc4122(),
             'variants' => [['sku' => 'GHOST-1', 'costPrice' => '1.00', 'sellingPrice' => '2.00']],
         ]));
 
@@ -206,8 +209,8 @@ final class ProductsControllerTest extends WebTestCase
 
         $this->client->request('POST', '/api/v1/products', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'name' => 'Clashing Product',
-            'brandId' => $brand->getId(),
-            'unitId' => $unit->getId(),
+            'brandId' => $brand->getId()->toRfc4122(),
+            'unitId' => $unit->getId()->toRfc4122(),
             'variants' => [['sku' => 'SKU-001', 'costPrice' => '1.00', 'sellingPrice' => '2.00']],
         ]));
 
@@ -223,8 +226,8 @@ final class ProductsControllerTest extends WebTestCase
 
         $this->client->request('POST', '/api/v1/products', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'name' => 'T-Shirt',
-            'brandId' => $brand->getId(),
-            'unitId' => $unit->getId(),
+            'brandId' => $brand->getId()->toRfc4122(),
+            'unitId' => $unit->getId()->toRfc4122(),
             'variants' => [
                 ['sku' => 'TSHIRT-S', 'costPrice' => '8.00', 'sellingPrice' => '15.00', 'barcode' => '111'],
                 ['sku' => 'TSHIRT-M', 'costPrice' => '8.00', 'sellingPrice' => '15.00'],
@@ -245,7 +248,7 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Delete Me');
 
-        $this->client->request('DELETE', '/api/v1/products/' . $product->getId());
+        $this->client->request('DELETE', '/api/v1/products/' . $product->getId()->toRfc4122());
 
         self::assertResponseStatusCodeSame(Response::HTTP_NO_CONTENT);
 
@@ -253,7 +256,7 @@ final class ProductsControllerTest extends WebTestCase
         $em->clear();
         // Use query instead of find() due to Doctrine ORM 3 bug with find() after cascade delete
         $found = $em->createQuery('SELECT p FROM App\Entity\Product p WHERE p.id = :id')
-            ->setParameter('id', $product->getId())
+            ->setParameter('id', $product->getId()->toRfc4122(), 'uuid')
             ->getOneOrNullResult();
         self::assertNull($found, 'Product should be deleted but was found: ' . ($found?->getId() ?? 'null'));
     }
@@ -264,15 +267,15 @@ final class ProductsControllerTest extends WebTestCase
         $existing = $product->getProductVariant()->first();
         self::assertNotFalse($existing);
 
-        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId()->toRfc4122(), [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'Variant Parent',
-            'brandId' => $product->getBrand()->getId(),
-            'unitId' => $product->getUnit()->getId(),
+            'brandId' => $product->getBrand()->getId()->toRfc4122(),
+            'unitId' => $product->getUnit()->getId()->toRfc4122(),
             'variants' => [
                 [
-                    'id' => $existing->getId(),
+                    'id' => $existing->getId()->toRfc4122(),
                     'sku' => 'SKU-001',
                     'costPrice' => '10.00',
                     'sellingPrice' => '19.99',
@@ -294,12 +297,12 @@ final class ProductsControllerTest extends WebTestCase
         $created = $variants[1];
 
         // The second PUT keeps SKU-002 and deletes the first variant.
-        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId()->toRfc4122(), [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'Variant Parent',
-            'brandId' => $product->getBrand()->getId(),
-            'unitId' => $product->getUnit()->getId(),
+            'brandId' => $product->getBrand()->getId()->toRfc4122(),
+            'unitId' => $product->getUnit()->getId()->toRfc4122(),
             'variants' => [[
                 'id' => $created['id'],
                 'sku' => 'SKU-002',
@@ -325,12 +328,12 @@ final class ProductsControllerTest extends WebTestCase
         $em->persist($other);
         $em->flush();
 
-        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId()->toRfc4122(), [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'First Product',
-            'brandId' => $product->getBrand()->getId(),
-            'unitId' => $product->getUnit()->getId(),
+            'brandId' => $product->getBrand()->getId()->toRfc4122(),
+            'unitId' => $product->getUnit()->getId()->toRfc4122(),
             'variants' => [[
                 'sku' => 'OTHER-SKU',
                 'costPrice' => '1.00',
@@ -347,14 +350,14 @@ final class ProductsControllerTest extends WebTestCase
     {
         $product = $this->seedProduct('Orphan Variant');
 
-        $this->client->request('PUT', '/api/v1/products/' . $product->getId(), [], [], [
+        $this->client->request('PUT', '/api/v1/products/' . $product->getId()->toRfc4122(), [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'name' => 'Orphan Variant',
-            'brandId' => $product->getBrand()->getId(),
-            'unitId' => $product->getUnit()->getId(),
+            'brandId' => $product->getBrand()->getId()->toRfc4122(),
+            'unitId' => $product->getUnit()->getId()->toRfc4122(),
             'variants' => [[
-                'id' => 999999,
+                'id' => self::UNKNOWN_UUID,
                 'sku' => 'SKU-001',
                 'costPrice' => '10.00',
                 'sellingPrice' => '12.00',
