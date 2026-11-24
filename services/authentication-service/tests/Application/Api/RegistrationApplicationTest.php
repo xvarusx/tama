@@ -105,7 +105,7 @@ final class RegistrationApplicationTest extends WebTestCase
 
     public function testVerificationEndpointRejectsAnUnknownUserId(): void
     {
-        $this->client->request('GET', '/api/authenticator/verify/email?id=999999');
+        $this->client->request('GET', '/api/authenticator/verify/email?id=0190f3d4-5b6c-7d8e-9f01-2a3b4c5d6e70');
 
         self::assertResponseStatusCodeSame(Response::HTTP_CONFLICT);
         self::assertStringContainsString('verify_email_error', $this->responseJson()['message']);

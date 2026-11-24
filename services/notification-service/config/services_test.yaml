@@ -1,0 +1,38 @@
+# Test-only container overrides.
+#
+# Ruling R5: replace the real AuthServiceClient with a configurable fake so
+# backend tests never call the authentication service (or the network).
+parameters: {}
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Tests\Support\FakeAuthServiceClient:
+        public: true
+
+    # Services fetched directly from the test container must stay public.
+    App\Service\SettingProvider:
+        public: true
+
+    App\Handler\Notification\CreateNotificationsHandler:
+        public: true
+
+    App\Security\AuthServiceClient:
+        alias: App\Tests\Support\FakeAuthServiceClient
+        public: true
+
+    # The delivery worker talks to a fake mail provider in tests (SDD ruling R5).
+    App\Tests\Support\FakeDeliverySender:
+        public: true
+
+    App\Mail\DeliverySender:
+        alias: App\Tests\Support\FakeDeliverySender
+        public: true
+
+    App\Handler\Delivery\ProcessDeliveriesHandler:
+        public: true
+
+    App\Repository\DeliveryAttemptRepository:
+        public: true

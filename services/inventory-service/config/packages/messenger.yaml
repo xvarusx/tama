@@ -10,7 +10,11 @@ framework:
                     queues:
                         inventory: ~
         routing:
-            App\Message\ProductUpdated: inventory
+            # Route product events from Product Service
+            App\Event\ProductUpdated: inventory
+            # Route order events from Order Service
+            App\Event\PurchaseOrderReceivedV1: inventory
+            App\Event\OrderShippedV1: inventory
 
 when@test:
     framework:

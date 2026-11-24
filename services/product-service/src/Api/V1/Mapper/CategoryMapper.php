@@ -15,7 +15,7 @@ final readonly class CategoryMapper
     {
 
         return [
-            'id' => (int)$category->getId(),
+            'id' => $category->getId()->toRfc4122(),
             'attributes' => [
                 'name' => $category->getName(),
                 'slug' => $category->getSlug(),

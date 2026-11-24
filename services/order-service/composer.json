@@ -7,18 +7,36 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "doctrine/doctrine-bundle": "^3.3",
+        "doctrine/doctrine-bundle": "^3.4.1",
         "doctrine/doctrine-migrations-bundle": "^4.0",
-        "doctrine/orm": "^3.7",
+        "doctrine/orm": "^3.7.6",
+        "nelmio/api-doc-bundle": "^5.13.2",
+        "phpdocumentor/reflection-docblock": "^6.0.3",
+        "phpstan/phpdoc-parser": "^2.4.1",
+        "predis/predis": "^3.7.1",
+        "symfony/amqp-messenger": "8.1.*",
+        "symfony/asset": "8.1.*",
+        "symfony/asset-mapper": "8.1.*",
+        "symfony/cache": "8.1.*",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
-        "symfony/flex": "^2",
+        "symfony/filesystem": "8.1.*",
+        "symfony/flex": "^2.12",
         "symfony/framework-bundle": "8.1.*",
+        "symfony/messenger": "8.1.*",
+        "symfony/mime": "8.1.*",
+        "symfony/property-access": "8.1.*",
+        "symfony/property-info": "8.1.*",
         "symfony/runtime": "8.1.*",
+        "symfony/serializer": "8.1.*",
+        "symfony/twig-bundle": "8.1.*",
+        "symfony/uid": "8.1.*",
+        "symfony/validator": "8.1.*",
         "symfony/yaml": "8.1.*"
     },
     "config": {
         "allow-plugins": {
+            "pestphp/pest-plugin": true,
             "php-http/discovery": true,
             "symfony/flex": true,
             "symfony/runtime": true
@@ -49,9 +67,19 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
+        "cs:check": "@php vendor/bin/php-cs-fixer check --config=Build/cs-fixer/php-cs-fixer.php",
+        "cs:fix": "@php vendor/bin/php-cs-fixer fix --config=Build/cs-fixer/php-cs-fixer.php",
+        "rector:check": "@php vendor/bin/rector process --config=Build/rector/rector.php --dry-run",
+        "rector:run": "@php vendor/bin/rector process --config=Build/rector/rector.php",
+        "stan:fix": "@php vendor/bin/phpstan analyse --configuration=Build/stan/phpstan.neon --fix",
+        "stan:check": "@php vendor/bin/phpstan analyse --configuration=Build/stan/phpstan.neon",
+        "unit:test": "@php vendor/bin/phpunit --configuration=Build/unit/phpunit.dist.xml",
+        "security:code": "semgrep scan --config auto",
+        "security:dependencies": "trivy repo --scanners vuln,secret,misconfig .",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"
@@ -70,6 +98,14 @@
         }
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^4.3.1",
+        "friendsofphp/php-cs-fixer": ">=3.95.30",
+        "phpstan/phpstan": "^2.3.5",
+        "phpstan/phpstan-doctrine": "^2.1.2",
+        "phpunit/phpunit": "^13.4.7",
+        "rector/rector": "^2.8.4",
+        "symfony/browser-kit": "8.1.*",
+        "symfony/css-selector": "8.1.*",
         "symfony/maker-bundle": "^1.68"
     }
 }

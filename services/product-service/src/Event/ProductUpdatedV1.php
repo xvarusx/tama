@@ -23,12 +23,12 @@ final class ProductUpdatedV1
         $category = $product->getCategory();
 
         return new OutboxEvent(self::TYPE, self::VERSION, [
-            'productId' => $product->getId(),
+            'productId' => $product->getId()->toRfc4122(),
             'name' => $product->getName(),
             'description' => $product->getDescription(),
-            'brand' => ['id' => $product->getBrand()->getId(), 'name' => $product->getBrand()->getName()],
-            'unit' => ['id' => $product->getUnit()->getId(), 'code' => $product->getUnit()->getCode()],
-            'category' => $category ? ['id' => $category->getId(), 'name' => $category->getName()] : null,
+            'brand' => ['id' => $product->getBrand()->getId()->toRfc4122(), 'name' => $product->getBrand()->getName()],
+            'unit' => ['id' => $product->getUnit()->getId()->toRfc4122(), 'code' => $product->getUnit()->getCode()],
+            'category' => $category ? ['id' => $category->getId()->toRfc4122(), 'name' => $category->getName()] : null,
             'changedFields' => $changedFields,
             'occurredAt' => new DateTimeImmutable()->format(\DATE_ATOM),
         ]);

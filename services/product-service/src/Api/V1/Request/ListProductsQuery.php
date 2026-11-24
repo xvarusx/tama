@@ -16,9 +16,9 @@ final readonly class ListProductsQuery
         public int $pageSize = 20,
         #[Assert\Length(max: 100)]
         public ?string $search = null,
-        #[Assert\Positive]
-        public ?int $categoryId = null,
-        #[Assert\Positive]
-        public ?int $brandId = null,
+        #[Assert\Uuid]
+        public ?string $categoryId = null,
+        #[Assert\Uuid]
+        public ?string $brandId = null,
     ) {}
 }

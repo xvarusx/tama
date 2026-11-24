@@ -30,7 +30,7 @@ final class ApiLoginSuccessHandler implements AuthenticationSuccessHandlerInterf
         return new JsonResponse([
             'token' => $apiToken,
             'user' => [
-                'id' => $user->getId(),
+                'id' => $user->getId()->toRfc4122(),
                 'fullName' => $user->getFullName(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),

@@ -5,7 +5,7 @@ import type {
 } from "@/services/products-api"
 
 export interface VariantFormValues {
-  id?: number
+  id?: string
   sku: string
   costPrice: string
   sellingPrice: string
@@ -144,8 +144,8 @@ function toNullable(value: string): string | null {
   return trimmed === "" ? null : trimmed
 }
 
-function toId(value: string): number {
-  return Number.parseInt(value.trim(), 10)
+function toId(value: string): string {
+  return value.trim()
 }
 
 export function toProductInput(values: ProductFormValues): ProductInput {

@@ -20,6 +20,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -91,7 +93,7 @@ final class CategoryController extends AbstractController
     }
 
     /** Rename a category, change its slug and/or move it to another position. */
-    #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID], methods: ['PUT'])]
     #[OA\Response(
         response: 200,
         description: 'Category updated.',
@@ -105,9 +107,9 @@ final class CategoryController extends AbstractController
     )]
     #[OA\Response(response: 404, description: 'Category not found.')]
     #[OA\Response(response: 409, description: 'A category with this slug already exists.')]
-    public function update(int $id, #[MapRequestPayload] SaveCategoryRequest $payload): JsonResponse
+    public function update(string $id, #[MapRequestPayload] SaveCategoryRequest $payload): JsonResponse
     {
-        $category = $this->em->find(Category::class, $id) ?? throw $this->createNotFoundException('Category not found.');
+        $category = $this->em->find(Category::class, Uuid::fromString($id)) ?? throw $this->createNotFoundException('Category not found.');
         $slug = $payload->slug ?? ($payload->name === $category->getName()
             ? $category->getSlug()
             : $this->slugs->generate($payload->name, Category::class, $id));
@@ -121,12 +123,12 @@ final class CategoryController extends AbstractController
     }
 
     /** Products of a deleted category keep existing, they just have no category any more. */
-    #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID], methods: ['DELETE'])]
     #[OA\Response(response: 204, description: 'Category deleted. Products keep existing without a category.')]
     #[OA\Response(response: 404, description: 'Category not found.')]
-    public function delete(int $id): Response
+    public function delete(string $id): Response
     {
-        $category = $this->em->find(Category::class, $id) ?? throw $this->createNotFoundException('Category not found.');
+        $category = $this->em->find(Category::class, Uuid::fromString($id)) ?? throw $this->createNotFoundException('Category not found.');
         $this->em->remove($category);
         $this->em->flush();
 

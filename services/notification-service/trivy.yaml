@@ -1,0 +1,6 @@
+scan:
+  skip-dirs:
+    - "var"
+    - "vendor"
+    - ".opencode"
+    - ".superpowers"

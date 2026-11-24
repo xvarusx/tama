@@ -4,14 +4,20 @@ namespace App\Tests\Unit\Entity;
 
 use App\Entity\Inventory;
 use App\Entity\InventoryMovement;
+use App\Entity\Product;
 use App\Enum\InventoryMovementType;
+use App\Tests\Support\ProductUuidTrait;
+use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class InventoryTest extends TestCase
 {
+    use ProductUuidTrait;
+
     public function testAvailableQuantityIsTheDecimalDifference(): void
     {
-        $inventory = (new Inventory())
+        $inventory = new Inventory()
             ->setQuantityOnHand('100.000')
             ->setQuantityReserved('20.500');
 
@@ -20,7 +26,7 @@ final class InventoryTest extends TestCase
 
     public function testAvailableQuantityCanBeNegative(): void
     {
-        $inventory = (new Inventory())
+        $inventory = new Inventory()
             ->setQuantityOnHand('5.000')
             ->setQuantityReserved('10.000');
 
@@ -29,7 +35,7 @@ final class InventoryTest extends TestCase
 
     public function testLowStockUsesLessThanOrEqual(): void
     {
-        $inventory = (new Inventory())
+        $inventory = new Inventory()
             ->setQuantityOnHand('100.000')
             ->setQuantityReserved('90.000')
             ->setReorderLevel('10.000');
@@ -39,7 +45,7 @@ final class InventoryTest extends TestCase
 
     public function testNotLowStockAboveReorderLevel(): void
     {
-        $inventory = (new Inventory())
+        $inventory = new Inventory()
             ->setQuantityOnHand('100.000')
             ->setQuantityReserved('10.000')
             ->setReorderLevel('20.000');
@@ -49,17 +55,17 @@ final class InventoryTest extends TestCase
 
     public function testMovementCollectionKeepsBothSidesInSync(): void
     {
-        $inventory = (new Inventory())->setProductId(42);
-        $movement = (new InventoryMovement())
-            ->setType(InventoryMovementType::Sale)
+        $inventory = new Inventory()->setProductId(Uuid::fromString($this->productUuid(42)));
+        $movement = new InventoryMovement()
+            ->setType(InventoryMovementType::OUT)
             ->setQuantity('5.000')
-            ->setCreatedAt(new \DateTimeImmutable());
+            ->setCreatedAt(new DateTimeImmutable());
 
         $inventory->addMovement($movement);
 
         self::assertTrue($inventory->getMovements()->contains($movement));
         self::assertSame($inventory, $movement->getInventory());
-        self::assertSame(42, $movement->getProductId());
+        self::assertSame($this->productUuid(42), $movement->getProductId()?->toRfc4122());
 
         $inventory->removeMovement($movement);
 
@@ -69,6 +75,15 @@ final class InventoryTest extends TestCase
 
     public function testVersionStartsAtOne(): void
     {
-        self::assertSame(1, (new Inventory())->getVersion());
+        self::assertSame(1, new Inventory()->getVersion());
+    }
+
+    public function testEveryEntityGeneratesItsOwnUuid(): void
+    {
+        self::assertTrue(Uuid::isValid((string)(new Inventory())->getId()));
+        self::assertTrue(Uuid::isValid((string)(new InventoryMovement())->getId()));
+        self::assertTrue(Uuid::isValid((string)(new Product())->getId()));
+
+        self::assertNotSame((new Inventory())->getId()->toRfc4122(), (new Inventory())->getId()->toRfc4122());
     }
 }

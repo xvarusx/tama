@@ -119,8 +119,8 @@ export default function ProductsPage() {
       page,
       pageSize,
       search: search || undefined,
-      brandId: brandId === ALL ? undefined : Number(brandId),
-      categoryId: categoryId === ALL ? undefined : Number(categoryId),
+      brandId: brandId === ALL ? undefined : brandId,
+      categoryId: categoryId === ALL ? undefined : categoryId,
     })
       .then((result) => {
         if (cancelled) return

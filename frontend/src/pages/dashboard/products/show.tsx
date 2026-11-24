@@ -50,7 +50,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 export default function ProductShowPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const productId = Number(id)
+  const productId = id
 
   const [product, setProduct] = useState<Product | null>(null)
   const [status, setStatus] = useState<Status>("loading")
@@ -69,7 +69,7 @@ export default function ProductShowPage() {
     let cancelled = false
 
     const request =
-      Number.isInteger(productId) && productId > 0
+      productId
         ? Promise.all([
           getProduct(productId),
           getBrands(),

@@ -1,21 +1,29 @@
-# Local environment files
+###> symfony/framework-bundle ###
 /.env
 /.env.local
-/.env.*.local
 /.env.local.php
-
-# Dependencies and generated output
-/vendor/
-/node_modules/
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
 /var/
-/dist/
-/dist-ssr/
-/coverage/
-/.phpunit.cache/
-/.php-cs-fixer.cache
+/vendor/
+###< symfony/framework-bundle ###
 
-# Logs and tool caches
-*.log
-/.nyc_output/
-/__pycache__/
-*.py[cod]
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+# PHP CS Fixer configuration
+/.php-cs-fixer.cache
+/.php-cs-fixer.php
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###

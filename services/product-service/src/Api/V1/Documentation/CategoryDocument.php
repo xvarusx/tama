@@ -8,7 +8,7 @@ namespace App\Api\V1\Documentation;
 final readonly class CategoryDocument
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $name,
         public string $slug,
         public int $position,

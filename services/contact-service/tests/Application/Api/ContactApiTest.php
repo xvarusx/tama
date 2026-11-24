@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class ContactApiTest extends WebTestCase
@@ -19,7 +20,7 @@ final class ContactApiTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
-        $userIds = [37, 81, 92, 104];
+        $userIds = [$this->userId(37), $this->userId(81), $this->userId(92), $this->userId(104)];
         $requestCount = 0;
         $httpClient = new MockHttpClient(
             static function (string $method, string $url, array $options) use (&$requestCount, $userIds): MockResponse {
@@ -43,42 +44,46 @@ final class ContactApiTest extends WebTestCase
 
         $client->request(
             'POST',
-            '/api/contact',
+            '/api/v1/contacts',
             server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_AUTH_TOKEN' => 'valid-token'],
-            content: '{"name":"Acme Supplies","email":"contact@acme.example","contactType":"client"}',
+            content: '{"name":"Acme Supplies","email":"contact@acme.example","type":"client"}',
         );
 
         self::assertResponseStatusCodeSame(201);
         $response = json_decode((string) $client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        self::assertSame(37, $response['createdBy']);
-        self::assertSame(37, $response['updatedBy']);
-        self::assertSame('Acme Supplies', $response['name']);
+        self::assertSame('success', $response['status']);
+        self::assertSame($userIds[0], $response['data']['attributes']['createdBy']);
+        self::assertSame($userIds[0], $response['data']['attributes']['updatedBy']);
+        self::assertSame('Acme Supplies', $response['data']['attributes']['name']);
+        $contactId = $response['data']['id'];
 
         $client->request(
             'PATCH',
-            '/api/contact/'.$response['id'],
+            '/api/v1/contacts/'.$contactId,
             server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_AUTH_TOKEN' => 'valid-token'],
             content: '{"name":"Acme Incorporated"}',
         );
         self::assertResponseIsSuccessful();
         $updated = json_decode((string) $client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        self::assertSame(37, $updated['createdBy']);
-        self::assertSame(81, $updated['updatedBy']);
-        self::assertSame('Acme Incorporated', $updated['name']);
+        self::assertSame('success', $updated['status']);
+        self::assertSame($userIds[0], $updated['data']['attributes']['createdBy']);
+        self::assertSame($userIds[1], $updated['data']['attributes']['updatedBy']);
+        self::assertSame('Acme Incorporated', $updated['data']['attributes']['name']);
 
         $client->request(
             'POST',
-            '/api/contact/'.$response['id'].'/deactivate',
+            '/api/v1/contacts/'.$contactId.'/deactivate',
             server: ['HTTP_X_AUTH_TOKEN' => 'valid-token'],
         );
         self::assertResponseIsSuccessful();
         $deactivated = json_decode((string) $client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        self::assertSame(92, $deactivated['updatedBy']);
-        self::assertSame('inactive', $deactivated['status']);
+        self::assertSame('success', $deactivated['status']);
+        self::assertSame($userIds[2], $deactivated['data']['attributes']['updatedBy']);
+        self::assertSame('inactive', $deactivated['data']['attributes']['status']);
 
         $client->request(
             'DELETE',
-            '/api/contact/'.$response['id'],
+            '/api/v1/contacts/'.$contactId,
             server: ['HTTP_X_AUTH_TOKEN' => 'valid-token'],
         );
         self::assertResponseStatusCodeSame(204);
@@ -87,21 +92,21 @@ final class ContactApiTest extends WebTestCase
         $auditEntries = $entityManager->getRepository(ContactAuditEntry::class)->findAll();
         $actorsByAction = [];
         foreach ($auditEntries as $entry) {
-            $actorsByAction[$entry->getAction()] = $entry->getUserId();
+            $actorsByAction[$entry->getAction()] = $entry->getUserId()->toRfc4122();
         }
 
         self::assertSame([
-            'created' => 37,
-            'updated' => 81,
-            'deactivated' => 92,
-            'deleted' => 104,
+            'created' => $userIds[0],
+            'updated' => $userIds[1],
+            'deactivated' => $userIds[2],
+            'deleted' => $userIds[3],
         ], $actorsByAction);
     }
 
     public function testContactApiRejectsRequestsWithoutAnAuthenticationToken(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/contact');
+        $client->request('GET', '/api/v1/contacts');
 
         self::assertResponseStatusCodeSame(401);
     }
@@ -113,7 +118,7 @@ final class ContactApiTest extends WebTestCase
         );
         $client->request(
             'GET',
-            '/api/contact',
+            '/api/v1/contacts',
             server: ['HTTP_X_AUTH_TOKEN' => 'invalid-token'],
         );
 
@@ -127,7 +132,7 @@ final class ContactApiTest extends WebTestCase
         );
         $client->request(
             'GET',
-            '/api/contact',
+            '/api/v1/contacts',
             server: ['HTTP_X_AUTH_TOKEN' => 'valid-token'],
         );
 
@@ -141,7 +146,7 @@ final class ContactApiTest extends WebTestCase
         );
         $client->request(
             'GET',
-            '/api/contact',
+            '/api/v1/contacts',
             server: ['HTTP_X_AUTH_TOKEN' => 'valid-token'],
         );
 
@@ -155,5 +160,10 @@ final class ContactApiTest extends WebTestCase
         static::getContainer()->set(HttpClientInterface::class, new MockHttpClient($response));
 
         return $client;
+    }
+
+    private function userId(int $number): string
+    {
+        return Uuid::v5(Uuid::fromString('6ba7b811-9dad-11d1-80b4-00c04fd430c8'), 'api-test-user-' . $number)->toRfc4122();
     }
 }

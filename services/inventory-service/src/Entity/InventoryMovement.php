@@ -3,26 +3,27 @@
 namespace App\Entity;
 
 use App\Enum\InventoryMovementType;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 class InventoryMovement
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid')]
     #[Groups(['inventory:read'])]
-    private ?int $id = null;
+    private Uuid $id;
 
     #[ORM\ManyToOne(inversedBy: 'movements')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Inventory $inventory = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid')]
     #[Groups(['inventory:read'])]
-    private ?int $productId = null;
+    private ?Uuid $productId = null;
 
     #[ORM\Column(length: 32, enumType: InventoryMovementType::class)]
     #[Groups(['inventory:read'])]
@@ -31,6 +32,10 @@ class InventoryMovement
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 3)]
     #[Groups(['inventory:read'])]
     private ?string $quantity = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 3, nullable: true)]
+    #[Groups(['inventory:read'])]
+    private ?string $quantityAfter = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 3, nullable: true)]
     #[Groups(['inventory:read'])]
@@ -62,9 +67,14 @@ class InventoryMovement
 
     #[ORM\Column]
     #[Groups(['inventory:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    private ?DateTimeImmutable $createdAt = null;
 
-    public function getId(): ?int
+    public function __construct()
+    {
+        $this->id = Uuid::v7();
+    }
+
+    public function getId(): Uuid
     {
         return $this->id;
     }
@@ -82,7 +92,7 @@ class InventoryMovement
         return $this;
     }
 
-    public function getProductId(): ?int
+    public function getProductId(): ?Uuid
     {
         return $this->productId;
     }
@@ -107,6 +117,18 @@ class InventoryMovement
     public function setQuantity(string $quantity): static
     {
         $this->quantity = $quantity;
+
+        return $this;
+    }
+
+    public function getQuantityAfter(): ?string
+    {
+        return $this->quantityAfter;
+    }
+
+    public function setQuantityAfter(?string $quantityAfter): static
+    {
+        $this->quantityAfter = $quantityAfter;
 
         return $this;
     }
@@ -195,15 +217,25 @@ class InventoryMovement
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
         return $this;
+    }
+
+    public function isIncoming(): bool
+    {
+        return $this->type === InventoryMovementType::IN;
+    }
+
+    public function isOutgoing(): bool
+    {
+        return $this->type === InventoryMovementType::OUT;
     }
 }

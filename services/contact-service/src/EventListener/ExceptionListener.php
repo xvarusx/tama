@@ -18,10 +18,18 @@ final class ExceptionListener
             ? $exception->getStatusCode()
             : Response::HTTP_INTERNAL_SERVER_ERROR;
 
-        $event->setResponse(new JsonResponse([
-            'error' => $exception instanceof HttpExceptionInterface
-                ? $exception->getMessage()
-                : 'An unexpected error occurred.',
-        ], $status));
+        $message = $exception instanceof HttpExceptionInterface
+            ? $exception->getMessage()
+            : 'An unexpected error occurred.';
+
+        // Include exception class and trace in debug mode
+        $debug = $_ENV['APP_DEBUG'] ?? false;
+        $responseData = ['error' => $message];
+        if ($debug) {
+            $responseData['exception'] = get_class($exception);
+            $responseData['trace'] = $exception->getTraceAsString();
+        }
+
+        $event->setResponse(new JsonResponse($responseData, $status));
     }
 }

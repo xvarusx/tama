@@ -33,7 +33,7 @@ export default function ContactsPage() {
           return
         }
 
-        setContacts(nextContacts)
+        setContacts(nextContacts.data)
         setTotal(nextTotal)
         setStatus("ready")
       })

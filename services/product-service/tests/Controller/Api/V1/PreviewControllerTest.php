@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Api\V1;
 
+use App\Entity\Brand;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -44,5 +45,44 @@ final class PreviewControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $body = json_decode($this->client->getResponse()->getContent(), true);
         self::assertSame('widget', $body['data']['slug']);
+    }
+
+    public function testSlugPreviewAcceptsAUuidIgnoreId(): void
+    {
+        $em = $this->em();
+        $brand = new Brand('Widget', 'widget');
+        $em->persist($brand);
+        $em->flush();
+
+        // Editing that brand must not produce a "widget-2" suffix.
+        $url = '/api/v1/slugs/preview?entity=brand&name=Widget&ignoreId=' . $brand->getId()->toRfc4122();
+        $this->client->request('GET', $url);
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertSame('widget', $body['data']['slug']);
+    }
+
+    public function testSkuPreviewAcceptsAUuidBrandId(): void
+    {
+        $em = $this->em();
+        $brand = new Brand('Acme', 'acme');
+        $em->persist($brand);
+        $em->flush();
+
+        $url = '/api/v1/skus/preview?brandId=' . $brand->getId()->toRfc4122() . '&name=Wireless Mouse';
+        $this->client->request('GET', $url);
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertSame('acme-wireless-mouse', $body['data']['sku']);
+    }
+
+    public function testSkuPreviewRejectsANonUuidBrandId(): void
+    {
+        $this->client->request('GET', '/api/v1/skus/preview?brandId=1&name=Widget');
+
+        // MapQueryString reports validation failures as a 404 in this app.
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
 }

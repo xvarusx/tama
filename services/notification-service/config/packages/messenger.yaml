@@ -1,0 +1,42 @@
+framework:
+    messenger:
+        # Messages that exhaust their retries land in the Doctrine-backed failed queue.
+        failure_transport: failed
+
+        serializer:
+            default_serializer: messenger.transport.symfony_serializer
+            symfony_serializer:
+                format: json
+
+        buses:
+            messenger.bus.default:
+                middleware:
+                    - doctrine_ping_connection
+                    - doctrine_close_connection
+
+        transports:
+            # fanout exchange shared with the services that request notifications
+            notification_events:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: notification_events
+                        type: fanout
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 30000
+            failed:
+                dsn: 'doctrine://default?queue_name=failed'
+
+        routing:
+            App\Message\NotificationRequested: notification_events
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                # Messages stay in memory during tests, so the suite does not need a broker.
+                notification_events: 'in-memory://'
+                failed: 'in-memory://'

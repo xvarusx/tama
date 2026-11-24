@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Inventory;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Inventory>
@@ -16,19 +17,64 @@ class InventoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Inventory::class);
     }
 
-    public function findByProductId(int $productId): ?Inventory
+    public function findByProductId(Uuid|string $productId): ?Inventory
     {
-        return $this->findOneBy(['productId' => $productId]);
+        $uuid = $this->toUuid($productId);
+
+        if ($uuid === null) {
+            return null;
+        }
+
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.productId = :productId')
+            ->setParameter('productId', $uuid, 'uuid')
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
-    public function findActive(int $id): ?Inventory
+    public function findActive(Uuid|string $id): ?Inventory
     {
-        return $this->findOneBy(['id' => $id, 'deletedAt' => null]);
+        $uuid = $this->toUuid($id);
+
+        if ($uuid === null) {
+            return null;
+        }
+
+        return $this->findOneBy(['id' => $uuid, 'deletedAt' => null]);
     }
 
-    public function findActiveByProductId(int $productId): ?Inventory
+    public function findActiveByProductId(Uuid|string $productId): ?Inventory
     {
-        return $this->findOneBy(['productId' => $productId, 'deletedAt' => null]);
+        $uuid = $this->toUuid($productId);
+
+        if ($uuid === null) {
+            return null;
+        }
+
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.productId = :productId')
+            ->andWhere('i.deletedAt IS NULL')
+            ->setParameter('productId', $uuid, 'uuid')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    private function toUuid(Uuid|string $id): ?Uuid
+    {
+        if ($id instanceof Uuid) {
+            return $id;
+        }
+
+        return Uuid::isValid($id) ? Uuid::fromString($id) : null;
+    }
+
+    public function countActive(): int
+    {
+        return (int)$this->createQueryBuilder('i')
+            ->where('i.deletedAt IS NULL')
+            ->select('COUNT(i.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     /**

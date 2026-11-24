@@ -19,22 +19,46 @@ vi.mock("@/lib/api", () => ({
   },
 }))
 
-const response = (data: unknown) => ({ data }) as never
+const makeContact = (index: number): Contact => ({
+  id: `00000000-0000-7000-8000-${String(index + 1).padStart(12, "0")}`,
+  name: `Contact ${index + 1}`,
+  email: null,
+  phone: null,
+  address: null,
+  contactType: "client",
+  taxNumber: null,
+  status: "active",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: null,
+  createdBy: `00000000-0000-7000-8000-${String(index + 100).padStart(12, "0")}`,
+  updatedBy: null,
+})
 
 const makeContacts = (count: number): Contact[] =>
-  Array.from({ length: count }, (_, index) => ({
-    id: `00000000-0000-7000-8000-${String(index + 1).padStart(12, "0")}`,
-    name: `Contact ${index + 1}`,
-    email: null,
-    phone: null,
-    address: null,
-    contactType: "client",
-    taxNumber: null,
-    status: "active",
-    trustLevel: "unrated",
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: null,
-  }))
+  Array.from({ length: count }, (_, index) => makeContact(index + 1))
+
+const contactEnvelope = (items: Contact[], page = 1, pageSize = 100) => ({
+  data: {
+    status: "success",
+    data: items.map(({ id, ...attributes }) => ({ id, attributes })),
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(items.length / pageSize) || 1,
+      pageSize,
+      totalItems: items.length,
+      links: {},
+    },
+  },
+})
+
+const singleResource = ({ id, ...attributes }: Contact) => ({ id, attributes })
+
+const singleEnvelope = (contact: Contact) => ({
+  data: {
+    status: "success",
+    data: singleResource(contact),
+  },
+})
 
 const input: ContactInput = {
   name: "Ada",
@@ -53,23 +77,11 @@ const updateInput: ContactUpdateInput = {
   taxNumber: null,
 }
 
-const contact: Contact = {
-  id: "00000000-0000-7000-8000-000000000007",
-  name: "Ada",
-  email: null,
-  phone: null,
-  address: null,
-  contactType: "client",
-  taxNumber: null,
-  status: "active",
-  trustLevel: "unrated",
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: null,
-}
+const contact: Contact = makeContact(7)
 
 const pageCall = (page: number) => [
-  "/api/contact",
-  { params: { page, limit: 100 } },
+  "/api/contacts/contacts",
+  { params: { page, pageSize: 100 } },
 ]
 
 beforeEach(() => {
@@ -79,8 +91,8 @@ beforeEach(() => {
 describe("getContactsTotal", () => {
   it("sums the last partial page", async () => {
     vi.mocked(api.get)
-      .mockResolvedValueOnce(response(makeContacts(100)))
-      .mockResolvedValueOnce(response(makeContacts(25)))
+      .mockResolvedValueOnce(contactEnvelope(makeContacts(100)))
+      .mockResolvedValueOnce(contactEnvelope(makeContacts(25)))
 
     await expect(getContactsTotal()).resolves.toBe(125)
 
@@ -90,8 +102,8 @@ describe("getContactsTotal", () => {
 
   it("counts a full page and stops on the empty one", async () => {
     vi.mocked(api.get)
-      .mockResolvedValueOnce(response(makeContacts(100)))
-      .mockResolvedValueOnce(response([]))
+      .mockResolvedValueOnce(contactEnvelope(makeContacts(100)))
+      .mockResolvedValueOnce(contactEnvelope([]))
 
     await expect(getContactsTotal()).resolves.toBe(100)
 
@@ -100,7 +112,7 @@ describe("getContactsTotal", () => {
   })
 
   it("returns zero when the first page is empty", async () => {
-    vi.mocked(api.get).mockResolvedValueOnce(response([]))
+    vi.mocked(api.get).mockResolvedValueOnce(contactEnvelope([]))
 
     await expect(getContactsTotal()).resolves.toBe(0)
 
@@ -109,7 +121,7 @@ describe("getContactsTotal", () => {
   })
 
   it("fails after the safety page limit instead of walking forever", async () => {
-    vi.mocked(api.get).mockResolvedValue(response(makeContacts(100)))
+    vi.mocked(api.get).mockResolvedValue(contactEnvelope(makeContacts(100)))
 
     await expect(getContactsTotal()).rejects.toThrow(
       "Unable to determine contact total.",
@@ -120,22 +132,22 @@ describe("getContactsTotal", () => {
 
 describe("createContact", () => {
   it("posts the input and returns the created contact", async () => {
-    vi.mocked(api.post).mockResolvedValueOnce(response(contact))
+    vi.mocked(api.post).mockResolvedValueOnce(singleEnvelope(contact))
 
-    await expect(createContact(input)).resolves.toBe(contact)
+    await expect(createContact(input)).resolves.toEqual(contact)
 
-    expect(api.post).toHaveBeenCalledWith("/api/contact", input)
+    expect(api.post).toHaveBeenCalledWith("/api/contacts/contacts", input)
   })
 })
 
 describe("updateContact", () => {
   it("puts the editable fields and returns the updated contact", async () => {
-    vi.mocked(api.put).mockResolvedValueOnce(response(contact))
+    vi.mocked(api.put).mockResolvedValueOnce(singleEnvelope(contact))
 
-    await expect(updateContact(contact.id, updateInput)).resolves.toBe(contact)
+    await expect(updateContact(contact.id, updateInput)).resolves.toEqual(contact)
 
     expect(api.put).toHaveBeenCalledWith(
-      `/api/contact/${contact.id}`,
+      `/api/contacts/contacts/${contact.id}`,
       updateInput,
     )
   })
@@ -143,10 +155,12 @@ describe("updateContact", () => {
 
 describe("deleteContact", () => {
   it("deletes the contact and resolves undefined", async () => {
-    vi.mocked(api.delete).mockResolvedValueOnce(response(undefined))
+    vi.mocked(api.delete).mockResolvedValueOnce({ data: undefined })
 
     await expect(deleteContact(contact.id)).resolves.toBeUndefined()
 
-    expect(api.delete).toHaveBeenCalledWith(`/api/contact/${contact.id}`)
+    expect(api.delete).toHaveBeenCalledWith(
+      `/api/contacts/contacts/${contact.id}`
+    )
   })
 })

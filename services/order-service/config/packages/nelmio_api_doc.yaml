@@ -1,0 +1,9 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Order Service
+            description: API documentation for Order Service
+            version: 1.0.0
+    areas:
+        path_patterns:
+            - ^/api(?!/doc)$

@@ -26,7 +26,7 @@ because it isn't installed yet; installing it is one command.
 
 ## Conventions
 
-Follow https://symfony.com/doc/current/best_practices.html to write idiomatic
+Follow <https://symfony.com/doc/current/best_practices.html> to write idiomatic
 Symfony:
 
 - Use PHP attributes for framework metadata, and not only on controllers:
@@ -85,6 +85,7 @@ Install `symfony/test-pack` if it isn't already. Functional/HTTP tests extend
 `php bin/phpunit` (falls back to `vendor/bin/phpunit`). A feature isn't done
 until it has a test that exercises it the way a caller would, an HTTP request for
 a controller or a service call for a service, not just "it didn't throw."
+use composer scripts and use the available to test the code
 
 ## Code style
 
@@ -104,5 +105,5 @@ things up in the project instead of relying on memory:
 - `bin/console lint:container`, plus `lint:twig templates/` and
   `lint:yaml config/` where those packages are installed: validate before running.
 - Read the installed source and docblocks under `vendor/`.
-- Docs: https://symfony.com/doc/current/ (switch to the version matching
+- Docs: <https://symfony.com/doc/current/> (switch to the version matching
   `composer.json` if it differs).

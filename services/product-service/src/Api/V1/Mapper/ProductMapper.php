@@ -18,22 +18,22 @@ final class ProductMapper
         $category = $product->getCategory();
 
         return new ProductResource(
-            id: (int)$product->getId(),
+            id: $product->getId()->toRfc4122(),
             attributes: [
                 'name' => $product->getName(),
                 'description' => $product->getDescription(),
-                'brand' => ['id' => $product->getBrand()->getId(), 'name' => $product->getBrand()->getName()],
-                'unit' => ['id' => $product->getUnit()->getId(), 'code' => $product->getUnit()->getCode()],
-                'category' => $category ? ['id' => $category->getId(), 'name' => $category->getName()] : null,
+                'brand' => ['id' => $product->getBrand()->getId()->toRfc4122(), 'name' => $product->getBrand()->getName()],
+                'unit' => ['id' => $product->getUnit()->getId()->toRfc4122(), 'code' => $product->getUnit()->getCode()],
+                'category' => $category ? ['id' => $category->getId()->toRfc4122(), 'name' => $category->getName()] : null,
                 'variants' => array_values(array_map(
                     $this->toVariantResource(...),
                     $product->getProductVariant()->toArray(),
                 )),
                 'media' => array_values(array_map(
                     fn(ProductMedia $m): array => [
-                        'id' => $m->getId(),
+                        'id' => $m->getId()->toRfc4122(),
                         // Relative to the product API base; the SPA prefixes it with /api/product.
-                        'url' => '/media/' . $m->getId(),
+                        'url' => '/media/' . $m->getId()->toRfc4122(),
                         'kind' => $m->getKind(),
                         'position' => $m->getPosition(),
                     ],
@@ -48,7 +48,7 @@ final class ProductMapper
     public function toVariantResource(ProductVariant $variant): VariantResource
     {
         return new VariantResource(
-            id: (int)$variant->getId(),
+            id: $variant->getId()->toRfc4122(),
             sku: $variant->getSku(),
             barcode: $variant->getBarcode(),
             options: $variant->getOptions(),

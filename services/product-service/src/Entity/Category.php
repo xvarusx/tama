@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
@@ -16,9 +17,8 @@ class Category
     use ShareableTrait;
     #[Groups(['product:read'])]
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $id;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
@@ -35,6 +35,7 @@ class Category
     public function __construct(?string $name = null, ?string $slug = null, #[ORM\Column(options: ['default' => 0])]
         private int $position = 0)
     {
+        $this->id = Uuid::v7();
         $this->products = new ArrayCollection();
         if ($name !== null) {
             $this->name = $name;
@@ -44,7 +45,7 @@ class Category
         }
     }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }

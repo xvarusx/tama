@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\InventoryMovement;
@@ -7,7 +9,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Inventory>
+ * @extends ServiceEntityRepository<InventoryMovement>
  */
 class InventoryMovementRepository extends ServiceEntityRepository
 {

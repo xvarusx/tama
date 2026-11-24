@@ -6,7 +6,6 @@ namespace App\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
@@ -16,14 +15,14 @@ use Symfony\Component\Uid\Uuid;
 class ContactAuditEntry
 {
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME)]
+    #[ORM\Column(type: 'uuid')]
     private Uuid $id;
 
-    #[ORM\Column(type: UuidType::NAME)]
+    #[ORM\Column(type: 'uuid')]
     private Uuid $contactId;
 
-    #[ORM\Column]
-    private int $userId;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $userId;
 
     #[ORM\Column(length: 32)]
     private string $action;
@@ -31,12 +30,8 @@ class ContactAuditEntry
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $occurredAt;
 
-    public function __construct(Uuid $contactId, int $userId, string $action)
+    public function __construct(Uuid $contactId, Uuid $userId, string $action)
     {
-        if ($userId < 1) {
-            throw new \InvalidArgumentException('User IDs must be positive integers.');
-        }
-
         $this->id = Uuid::v7();
         $this->contactId = $contactId;
         $this->userId = $userId;
@@ -54,7 +49,7 @@ class ContactAuditEntry
         return $this->contactId;
     }
 
-    public function getUserId(): int
+    public function getUserId(): Uuid
     {
         return $this->userId;
     }

@@ -16,7 +16,7 @@ final readonly class PreviewSlugQuery
         public string $name,
 
         /** Pass the id when editing, so the item does not clash with its own slug. */
-        #[Assert\Positive]
-        public ?int $ignoreId = null,
+        #[Assert\Uuid]
+        public ?string $ignoreId = null,
     ) {}
 }

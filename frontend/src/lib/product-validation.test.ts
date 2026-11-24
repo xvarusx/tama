@@ -10,12 +10,21 @@ import {
   type ProductFormValues,
 } from "./product-validation"
 
+const uuid = (n: number): string =>
+  `00000000-0000-7000-8000-${String(n).padStart(12, "0")}`
+
+const PRODUCT_ID = uuid(7)
+const BRAND_ID = uuid(1)
+const UNIT_ID = uuid(2)
+const CATEGORY_ID = uuid(3)
+const VARIANT_ID = uuid(11)
+
 const validValues = (
   overrides: Partial<ProductFormValues> = {},
 ): ProductFormValues => ({
   name: "Product",
-  brandId: "1",
-  unitId: "2",
+  brandId: BRAND_ID,
+  unitId: UNIT_ID,
   categoryId: "",
   description: "",
   variants: [
@@ -25,17 +34,17 @@ const validValues = (
 })
 
 const product: Product = {
-  id: 7,
+  id: PRODUCT_ID,
   type: "product",
   attributes: {
     name: "Ada",
     description: null,
-    brand: { id: 1, name: "Acme" },
-    unit: { id: 2, code: "pcs" },
-    category: { id: 3, name: "Monitors" },
+    brand: { id: BRAND_ID, name: "Acme" },
+    unit: { id: UNIT_ID, code: "pcs" },
+    category: { id: CATEGORY_ID, name: "Monitors" },
     variants: [
       {
-        id: 11,
+        id: VARIANT_ID,
         sku: "SKU-7",
         barcode: null,
         options: null,
@@ -155,13 +164,13 @@ describe("validateProductForm", () => {
 })
 
 describe("toProductInput", () => {
-  it("trims text, converts ids and turns empty optionals into null", () => {
+  it("trims text, keeps UUID strings and turns empty optionals into null", () => {
     expect(
       toProductInput(
         validValues({
           name: "  Ada  ",
-          brandId: " 1 ",
-          unitId: "2",
+          brandId: `  ${BRAND_ID} `,
+          unitId: UNIT_ID,
           categoryId: "",
           description: "  ",
           variants: [
@@ -176,8 +185,8 @@ describe("toProductInput", () => {
       ),
     ).toEqual({
       name: "Ada",
-      brandId: 1,
-      unitId: 2,
+      brandId: BRAND_ID,
+      unitId: UNIT_ID,
       categoryId: null,
       description: null,
       variants: [
@@ -192,7 +201,9 @@ describe("toProductInput", () => {
   })
 
   it("keeps a category when one is selected", () => {
-    expect(toProductInput(validValues({ categoryId: "3" })).categoryId).toBe(3)
+    expect(
+      toProductInput(validValues({ categoryId: CATEGORY_ID })).categoryId,
+    ).toBe(CATEGORY_ID)
   })
 })
 
@@ -200,8 +211,8 @@ describe("toProductUpdateInput", () => {
   it("includes the variants so PUT can sync them", () => {
     expect(toProductUpdateInput(validValues())).toEqual({
       name: "Product",
-      brandId: 1,
-      unitId: 2,
+      brandId: BRAND_ID,
+      unitId: UNIT_ID,
       categoryId: null,
       description: null,
       variants: [
@@ -220,7 +231,7 @@ describe("toProductUpdateInput", () => {
       validValues({
         variants: [
           {
-            id: 11,
+            id: VARIANT_ID,
             sku: "SKU-7",
             costPrice: "10.00",
             sellingPrice: "12.00",
@@ -232,7 +243,7 @@ describe("toProductUpdateInput", () => {
     )
 
     expect(input.variants[0]).toEqual({
-      id: 11,
+      id: VARIANT_ID,
       sku: "SKU-7",
       costPrice: "10.00",
       sellingPrice: "12.00",
@@ -246,13 +257,13 @@ describe("toProductFormValues", () => {
   it("reads the nested attributes", () => {
     expect(toProductFormValues(product)).toEqual({
       name: "Ada",
-      brandId: "1",
-      unitId: "2",
-      categoryId: "3",
+      brandId: BRAND_ID,
+      unitId: UNIT_ID,
+      categoryId: CATEGORY_ID,
       description: "",
       variants: [
         {
-          id: 11,
+          id: VARIANT_ID,
           sku: "SKU-7",
           costPrice: "10.00",
           sellingPrice: "12.00",
@@ -265,7 +276,7 @@ describe("toProductFormValues", () => {
 
   it("keeps variant ids and options", () => {
     expect(toProductFormValues(product).variants[0]).toEqual({
-      id: 11,
+      id: VARIANT_ID,
       sku: "SKU-7",
       costPrice: "10.00",
       sellingPrice: "12.00",

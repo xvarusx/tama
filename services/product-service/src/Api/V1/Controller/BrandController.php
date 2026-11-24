@@ -21,6 +21,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -89,7 +91,7 @@ final class BrandController extends AbstractController
     }
 
     /** Rename a brand and/or change its slug. The slug only changes when the name changes. */
-    #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID], methods: ['PUT'])]
     #[OA\Response(
         response: 200,
         description: 'Brand updated.',
@@ -103,9 +105,9 @@ final class BrandController extends AbstractController
     )]
     #[OA\Response(response: 404, description: 'Brand not found.')]
     #[OA\Response(response: 409, description: 'A brand with this name or slug already exists.')]
-    public function update(int $id, #[MapRequestPayload] SaveBrandRequest $payload): JsonResponse
+    public function update(string $id, #[MapRequestPayload] SaveBrandRequest $payload): JsonResponse
     {
-        $brand = $this->em->find(Brand::class, $id) ?? throw $this->createNotFoundException('Brand not found.');
+        $brand = $this->em->find(Brand::class, Uuid::fromString($id)) ?? throw $this->createNotFoundException('Brand not found.');
         // the slug only changes when the name changes (or when the client sends one)
         $slug = $payload->slug ?? ($payload->name === $brand->getName()
             ? $brand->getSlug()
@@ -120,13 +122,13 @@ final class BrandController extends AbstractController
     }
 
     /** Delete a brand. Brands still referenced by products cannot be deleted. */
-    #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID], methods: ['DELETE'])]
     #[OA\Response(response: 204, description: 'Brand deleted.')]
     #[OA\Response(response: 404, description: 'Brand not found.')]
     #[OA\Response(response: 409, description: 'The brand is used by products and cannot be deleted.')]
-    public function delete(int $id): Response
+    public function delete(string $id): Response
     {
-        $brand = $this->em->find(Brand::class, $id) ?? throw $this->createNotFoundException('Brand not found.');
+        $brand = $this->em->find(Brand::class, Uuid::fromString($id)) ?? throw $this->createNotFoundException('Brand not found.');
 
         try {
             $this->em->remove($brand);

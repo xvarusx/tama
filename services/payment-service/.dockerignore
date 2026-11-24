@@ -1,0 +1,11 @@
+/.git
+/.env.local
+/.env.*.local
+/config/secrets/
+/var/cache/
+/var/log/
+/tests/
+/Build/
+/.php-cs-fixer.cache
+/.phpunit.cache/
+/vendor/

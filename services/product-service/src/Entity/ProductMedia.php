@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ProductMediaRepository;
 use App\Traits\ShareableTrait;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ProductMediaRepository::class)]
@@ -13,9 +14,8 @@ class ProductMedia
     use ShareableTrait;
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $id;
 
     #[ORM\ManyToOne(inversedBy: 'media')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -29,9 +29,11 @@ class ProductMedia
         /** Display order: 0 = cover image. */
         #[ORM\Column(options: ['default' => 0])]
         private int $position = 0
-    ) {}
+    ) {
+        $this->id = Uuid::v7();
+    }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }

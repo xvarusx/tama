@@ -3,9 +3,12 @@
 
 import * as React from "react"
 import {
+  Bell,
   BookOpen,
   Bot,
   Command,
+  CreditCard,
+  FileText,
   Frame,
   LifeBuoy,
   Map,
@@ -29,11 +32,6 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Contacts",
@@ -47,9 +45,33 @@ const data = {
     },
     {
       title: "Inventory",
-      url: "#",
+      url: "/dashboard/inventory",
       icon: Bot,
-      disabled: true,
+    },
+    {
+      title: "Invoices",
+      url: "/dashboard/invoices",
+      icon: FileText,
+    },
+    {
+      title: "Payments",
+      url: "/dashboard/payments",
+      icon: CreditCard,
+      items: [
+        {
+          title: "Payment plans",
+          url: "/dashboard/payment-plans",
+        },
+        {
+          title: "Allocations",
+          url: "/dashboard/allocations",
+        },
+      ],
+    },
+    {
+      title: "Notifications",
+      url: "/dashboard/notifications",
+      icon: Bell,
     },
   ],
   navSecondary: [
@@ -110,7 +132,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )

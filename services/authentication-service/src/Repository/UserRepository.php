@@ -8,6 +8,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -31,6 +32,40 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $user->setPassword($newHashedPassword);
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
+    }
+
+    /**
+     * Roles are stored as a JSON column, so filtering by role in SQL is not
+     * portable across MySQL and SQLite. Filtering in PHP keeps the internal
+     * user directory identical in development, CI and tests.
+     *
+     * @return list<User>
+     */
+    public function findVerifiedByRole(string $role): array
+    {
+        $normalized = str_starts_with($role, 'ROLE_') ? $role : 'ROLE_'.$role;
+
+        return array_values(array_filter(
+            $this->findAll(),
+            static fn (User $user): bool => true === $user->isVerified()
+                && \in_array($normalized, $user->getRoles(), true),
+        ));
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return list<User>
+     */
+    public function findVerifiedByIds(array $ids): array
+    {
+        $wanted = array_map(static fn (string $id): string => (string) Uuid::fromString($id), $ids);
+
+        return array_values(array_filter(
+            $this->findAll(),
+            static fn (User $user): bool => true === $user->isVerified()
+                && \in_array((string) $user->getId(), $wanted, true),
+        ));
     }
 
     //    /**

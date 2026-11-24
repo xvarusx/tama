@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ invoice.number ?? 'Draft invoice' }}</title>
+    <style>
+        body { font-family: "DejaVu Sans", sans-serif; font-size: 12px; color: #111; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .muted { color: #555; }
+        .meta { margin: 16px 0; }
+        .meta td { padding: 2px 12px 2px 0; vertical-align: top; }
+        table.lines { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        table.lines th, table.lines td { border-bottom: 1px solid #ccc; padding: 6px 4px; text-align: left; }
+        table.lines th.num, table.lines td.num { text-align: right; }
+        table.totals { width: 45%; margin-left: 55%; margin-top: 12px; border-collapse: collapse; }
+        table.totals td { padding: 3px 4px; }
+        table.totals td.num { text-align: right; }
+        table.totals tr.grand td { border-top: 2px solid #111; font-weight: bold; }
+        .draft { border: 2px solid #b00; color: #b00; display: inline-block; font-size: 16px; font-weight: bold; margin-top: 8px; padding: 4px 10px; transform: rotate(-3deg); }
+        .footer { margin-top: 28px; font-size: 10px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>{{ isDraft ? 'Draft invoice' : invoice.number }}</h1>
+    <div class="muted">Issued {{ now|date('Y-m-d') }}</div>
+    {% if isDraft %}
+        <div class="draft">DRAFT</div>
+    {% endif %}
+
+    <table class="meta">
+        <tr>
+            <td><strong>Bill to</strong></td>
+            <td>{{ invoice.partyName }}</td>
+        </tr>
+        <tr>
+            <td><strong>Order</strong></td>
+            <td>{{ invoice.orderId.toRfc4122() }}</td>
+        </tr>
+        <tr>
+            <td><strong>Currency</strong></td>
+            <td>{{ invoice.currency }}</td>
+        </tr>
+        {% if invoice.issueDate %}
+            <tr>
+                <td><strong>Issue date</strong></td>
+                <td>{{ invoice.issueDate|date('Y-m-d') }}</td>
+            </tr>
+            <tr>
+                <td><strong>Due date</strong></td>
+                <td>{{ invoice.dueDate|date('Y-m-d') }}</td>
+            </tr>
+        {% endif %}
+    </table>
+
+    <table class="lines">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="num">Qty</th>
+                <th class="num">Unit price</th>
+                <th class="num">Tax</th>
+                <th class="num">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in lines %}
+                <tr>
+                    <td>{{ line.description }}</td>
+                    <td class="num">{{ line.quantity }}</td>
+                    <td class="num">{{ line.unitPrice }}</td>
+                    <td class="num">{{ line.taxAmount }}</td>
+                    <td class="num">{{ line.total }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td>Total</td>
+            <td class="num">{{ total }}</td>
+        </tr>
+        <tr>
+            <td>Credited</td>
+            <td class="num">{{ creditedAmount }}</td>
+        </tr>
+        <tr>
+            <td>Paid</td>
+            <td class="num">{{ invoice.amountPaid }}</td>
+        </tr>
+        <tr class="grand">
+            <td>Balance</td>
+            <td class="num">{{ balance }}</td>
+        </tr>
+    </table>
+
+    {% if invoice.creditNotes is not empty %}
+        <h2 style="font-size: 14px; margin-top: 24px;">Credit notes</h2>
+        <table class="lines">
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Reason</th>
+                    <th class="num">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for creditNote in invoice.creditNotes %}
+                    <tr>
+                        <td>{{ creditNote.number }}</td>
+                        <td>{{ creditNote.reason }}</td>
+                        <td class="num">{{ creditNote.amount }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div class="footer">All amounts are in {{ invoice.currency }} minor units.</div>
+</body>
+</html>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Api\V1\Controller;
 
 use App\Api\V1\Documentation\UnitDocument;
+use App\Api\V1\Mapper\UnitMapper;
 use App\Api\V1\Request\SaveUnitRequest;
 use App\Entity\Unit;
 use App\Utils\ApiResponse;
@@ -19,6 +20,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -86,7 +89,7 @@ final class UnitController extends AbstractController
     }
 
     /** Change a unit's code and whether it allows decimal quantities. */
-    #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID], methods: ['PUT'])]
     #[OA\Response(
         response: 200,
         description: 'Unit updated.',
@@ -100,9 +103,9 @@ final class UnitController extends AbstractController
     )]
     #[OA\Response(response: 404, description: 'Unit not found.')]
     #[OA\Response(response: 409, description: 'A unit with this code already exists.')]
-    public function update(int $id, #[MapRequestPayload] SaveUnitRequest $payload): JsonResponse
+    public function update(string $id, #[MapRequestPayload] SaveUnitRequest $payload): JsonResponse
     {
-        $unit = $this->em->find(Unit::class, $id) ?? throw $this->createNotFoundException('Unit not found.');
+        $unit = $this->em->find(Unit::class, Uuid::fromString($id)) ?? throw $this->createNotFoundException('Unit not found.');
         $unit->changeCode($payload->code)->setAllowDecimal($payload->allowDecimal);
         $this->flush();
 
@@ -113,13 +116,13 @@ final class UnitController extends AbstractController
     }
 
     /** Delete a unit. Units still referenced by products cannot be deleted. */
-    #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID], methods: ['DELETE'])]
     #[OA\Response(response: 204, description: 'Unit deleted.')]
     #[OA\Response(response: 404, description: 'Unit not found.')]
     #[OA\Response(response: 409, description: 'The unit is used by products and cannot be deleted.')]
-    public function delete(int $id): Response
+    public function delete(string $id): Response
     {
-        $unit = $this->em->find(Unit::class, $id) ?? throw $this->createNotFoundException('Unit not found.');
+        $unit = $this->em->find(Unit::class, Uuid::fromString($id)) ?? throw $this->createNotFoundException('Unit not found.');
 
         try {
             $this->em->remove($unit);

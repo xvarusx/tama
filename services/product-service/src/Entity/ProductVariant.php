@@ -7,6 +7,7 @@ use App\Traits\ShareableTrait;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ProductVariantRepository::class)]
@@ -15,9 +16,8 @@ class ProductVariant
     use ShareableTrait;
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $id;
 
     #[ORM\Column(nullable: true)]
     private ?DateTimeImmutable $stockUpdatedAt = null;
@@ -37,9 +37,11 @@ class ProductVariant
         private ?string $barcode = null,
         #[ORM\Column(nullable: true)]
         private ?array $options = null
-    ) {}
+    ) {
+        $this->id = Uuid::v7();
+    }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }

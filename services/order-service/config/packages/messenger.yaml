@@ -1,0 +1,23 @@
+framework:
+    messenger:
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: messages
+                        type: fanout
+        routing:
+            # Route order events to the async transport
+            App\Event\OrderSubmittedV1: async
+            App\Event\OrderUpdatedV1: async
+            App\Event\OrderShippedV1: async
+            App\Event\OrderDeliveredV1: async
+            App\Event\OrderCanceledV1: async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                # Messages stay in memory during tests, so the suite does not need a broker.
+                async: 'in-memory://'

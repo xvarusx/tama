@@ -6,15 +6,13 @@ namespace App\Entity;
 
 use App\Enum\ContactStatus;
 use App\Enum\ContactType;
-use App\Enum\TrustLevel;
 use App\Event\ContactBlacklisted;
 use App\Event\ContactDeactivated;
 use App\Event\ContactReinstated;
-use App\Event\ContactTrustLevelChanged;
+use App\Event\ContactUpdated;
 use App\Repository\ContactRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -23,12 +21,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'contacts')]
 #[ORM\Index(name: 'idx_contact_type', fields: ['contactType'])]
 #[ORM\Index(name: 'idx_contact_status', fields: ['status'])]
-#[ORM\Index(name: 'idx_contact_trust_level', fields: ['trustLevel'])]
 #[ORM\UniqueConstraint(name: 'uniq_contact_tax_number_type', fields: ['taxNumber', 'contactType'])]
 class Contact
 {
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME)]
+    #[ORM\Column(type: 'uuid')]
     private Uuid $id;
 
     #[ORM\Column(length: 50, nullable: true)]
@@ -54,24 +51,21 @@ class Contact
     #[ORM\Column(enumType: ContactStatus::class, length: 16)]
     private ContactStatus $status = ContactStatus::ACTIVE;
 
-    #[ORM\Column(enumType: TrustLevel::class, length: 16)]
-    private TrustLevel $trustLevel = TrustLevel::UNRATED;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $blacklistReason = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $blacklistedAt = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $createdBy;
+    #[ORM\Column(type: 'uuid', nullable: true)]
+    private ?Uuid $createdBy = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $updatedBy;
+    #[ORM\Column(type: 'uuid', nullable: true)]
+    private ?Uuid $updatedBy = null;
 
     /** User ID from the authentication service. */
-    #[ORM\Column(nullable: true)]
-    private ?int $blacklistedBy = null;
+    #[ORM\Column(type: 'uuid', nullable: true)]
+    private ?Uuid $blacklistedBy = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
@@ -87,7 +81,10 @@ class Contact
     /** @var list<object> Domain events, dispatched after flush. Not persisted. */
     private array $events = [];
 
-    public function __construct(string $name, int $createdBy, ContactType $contactType = ContactType::CLIENT)
+    /** @var array<string> Field names that have been modified since last flush. */
+    private array $changedFields = [];
+
+    public function __construct(string $name, Uuid $createdBy, ContactType $contactType = ContactType::CLIENT)
     {
         $this->id = Uuid::v7();
         $this->name = $name;
@@ -99,7 +96,7 @@ class Contact
 
     // ---- Status management (use these instead of setters, they keep the data consistent) ----
 
-    public function blacklist(string $reason, int $by): void
+    public function blacklist(string $reason, Uuid $by): void
     {
         if (ContactStatus::BLACKLISTED === $this->status) {
             return;
@@ -109,16 +106,15 @@ class Contact
         }
 
         $this->status = ContactStatus::BLACKLISTED;
-        $this->trustLevel = TrustLevel::UNRATED; // a blacklisted contact cannot stay trusted
         $this->blacklistReason = $reason;
         $this->blacklistedAt = new \DateTimeImmutable();
         $this->blacklistedBy = $by;
         $this->touch($by);
 
-        $this->record(new ContactBlacklisted($this->id, $this->contactType, $reason));
+        $this->record(new ContactBlacklisted($this, $reason));
     }
 
-    public function reinstate(int $by): void
+    public function reinstate(Uuid $by): void
     {
         if (ContactStatus::BLACKLISTED !== $this->status) {
             throw new \DomainException('Only a blacklisted contact can be reinstated.');
@@ -130,10 +126,10 @@ class Contact
         $this->blacklistedBy = null;
         $this->touch($by);
 
-        $this->record(new ContactReinstated($this->id, $this->contactType));
+        $this->record(new ContactReinstated($this));
     }
 
-    public function deactivate(int $by): void
+    public function deactivate(Uuid $by): void
     {
         if (ContactStatus::BLACKLISTED === $this->status) {
             throw new \DomainException('Reinstate the contact before deactivating it.');
@@ -145,10 +141,10 @@ class Contact
         $this->status = ContactStatus::INACTIVE;
         $this->touch($by);
 
-        $this->record(new ContactDeactivated($this->id, $this->contactType));
+        $this->record(new ContactDeactivated($this));
     }
 
-    public function activate(int $by): void
+    public function activate(Uuid $by): void
     {
         if (ContactStatus::INACTIVE !== $this->status) {
             throw new \DomainException('Only an inactive contact can be activated.');
@@ -156,21 +152,6 @@ class Contact
 
         $this->status = ContactStatus::ACTIVE;
         $this->touch($by);
-    }
-
-    public function changeTrustLevel(TrustLevel $trustLevel, int $by): void
-    {
-        if (ContactStatus::BLACKLISTED === $this->status) {
-            throw new \DomainException('The trust level of a blacklisted contact cannot be changed.');
-        }
-        if ($trustLevel === $this->trustLevel) {
-            return;
-        }
-
-        $this->trustLevel = $trustLevel;
-        $this->touch($by);
-
-        $this->record(new ContactTrustLevelChanged($this->id, $this->contactType, $trustLevel));
     }
 
     /** Can new orders be created with this contact? */
@@ -184,12 +165,6 @@ class Contact
     public function isBlacklisted(): bool
     {
         return ContactStatus::BLACKLISTED === $this->status;
-    }
-
-    #[Ignore]
-    public function isTrusted(): bool
-    {
-        return TrustLevel::TRUSTED === $this->trustLevel;
     }
 
     // ---- Events ----
@@ -208,12 +183,31 @@ class Contact
         $this->events[] = $event;
     }
 
-    public function markUpdatedBy(int $userId): void
+    private function recordChangedField(string $fieldName): void
+    {
+        if (!in_array($fieldName, $this->changedFields, true)) {
+            $this->changedFields[] = $fieldName;
+        }
+    }
+
+    /**
+     * Call this after all changes have been made to emit ContactUpdated event
+     * if any regular fields were modified.
+     */
+    public function emitUpdatedEvent(): void
+    {
+        if (!empty($this->changedFields)) {
+            $this->record(new ContactUpdated($this, $this->changedFields));
+            $this->changedFields = [];
+        }
+    }
+
+    public function markUpdatedBy(Uuid $userId): void
     {
         $this->touch($userId);
     }
 
-    private function touch(?int $userId = null): void
+    private function touch(?Uuid $userId = null): void
     {
         $this->updatedAt = new \DateTimeImmutable();
 
@@ -236,8 +230,11 @@ class Contact
 
     public function setName(string $name): static
     {
-        $this->name = $name;
-        $this->touch();
+        if ($this->name !== $name) {
+            $this->name = $name;
+            $this->touch();
+            $this->recordChangedField('name');
+        }
 
         return $this;
     }
@@ -249,8 +246,11 @@ class Contact
 
     public function setEmail(?string $email): static
     {
-        $this->email = $email;
-        $this->touch();
+        if ($this->email !== $email) {
+            $this->email = $email;
+            $this->touch();
+            $this->recordChangedField('email');
+        }
 
         return $this;
     }
@@ -262,8 +262,11 @@ class Contact
 
     public function setPhone(?string $phone): static
     {
-        $this->phone = $phone;
-        $this->touch();
+        if ($this->phone !== $phone) {
+            $this->phone = $phone;
+            $this->touch();
+            $this->recordChangedField('phone');
+        }
 
         return $this;
     }
@@ -275,8 +278,11 @@ class Contact
 
     public function setAddress(?string $address): static
     {
-        $this->address = $address;
-        $this->touch();
+        if ($this->address !== $address) {
+            $this->address = $address;
+            $this->touch();
+            $this->recordChangedField('address');
+        }
 
         return $this;
     }
@@ -289,8 +295,13 @@ class Contact
     public function setTaxNumber(?string $taxNumber): static
     {
         // An empty string would collide in the unique index, so store it as NULL.
-        $this->taxNumber = (null === $taxNumber || '' === trim($taxNumber)) ? null : trim($taxNumber);
-        $this->touch();
+        $normalized = (null === $taxNumber || '' === trim($taxNumber)) ? null : trim($taxNumber);
+
+        if ($this->taxNumber !== $normalized) {
+            $this->taxNumber = $normalized;
+            $this->touch();
+            $this->recordChangedField('taxNumber');
+        }
 
         return $this;
     }
@@ -302,14 +313,20 @@ class Contact
         return $this->contactType;
     }
 
+    public function setContactType(ContactType $contactType): static
+    {
+        if ($this->contactType !== $contactType) {
+            $this->contactType = $contactType;
+            $this->touch();
+            $this->recordChangedField('contactType');
+        }
+
+        return $this;
+    }
+
     public function getStatus(): ContactStatus
     {
         return $this->status;
-    }
-
-    public function getTrustLevel(): TrustLevel
-    {
-        return $this->trustLevel;
     }
 
     public function getBlacklistReason(): ?string
@@ -322,17 +339,17 @@ class Contact
         return $this->blacklistedAt;
     }
 
-    public function getCreatedBy(): ?int
+    public function getCreatedBy(): ?Uuid
     {
         return $this->createdBy;
     }
 
-    public function getUpdatedBy(): ?int
+    public function getUpdatedBy(): ?Uuid
     {
         return $this->updatedBy;
     }
 
-    public function getBlacklistedBy(): ?int
+    public function getBlacklistedBy(): ?Uuid
     {
         return $this->blacklistedBy;
     }

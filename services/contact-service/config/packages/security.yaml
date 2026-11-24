@@ -11,6 +11,7 @@ security:
                 - App\Security\AuthenticationServiceAuthenticator
 
     access_control:
+        - { path: ^/api/doc$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:

@@ -7,7 +7,7 @@ namespace App\Api\V1\Resource;
 final readonly class VariantResource
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $sku,
         public ?string $barcode,
         public ?array $options,

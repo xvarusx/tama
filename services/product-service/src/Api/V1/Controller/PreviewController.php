@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * "What would this slug / SKU be?" for the UI forms. Nothing is saved or reserved,
@@ -78,7 +79,7 @@ final class PreviewController extends AbstractController
     #[OA\Response(response: 422, description: 'The brand does not exist.')]
     public function sku(#[MapQueryString] PreviewSkuQuery $query): JsonResponse
     {
-        $brand = $this->em->find(Brand::class, $query->brandId)
+        $brand = $this->em->find(Brand::class, Uuid::fromString($query->brandId))
             ?? throw new UnprocessableEntityHttpException('Brand does not exist.');
 
         return new JsonResponse(ApiResponse::success([

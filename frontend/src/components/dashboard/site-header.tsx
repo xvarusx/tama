@@ -12,10 +12,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 const sectionLabels: Record<string, string> = {
   "/dashboard/contacts": "Contacts",
   "/dashboard/products": "Products",
+  "/dashboard/notifications": "Notifications",
+  "/dashboard/notifications/preferences": "Notification preferences",
+  "/dashboard/notifications/admin": "Notification admin",
 }
 
 export function SiteHeader() {
@@ -23,7 +27,8 @@ export function SiteHeader() {
   const { pathname } = useLocation()
   const section =
     sectionLabels[pathname] ??
-    (pathname.startsWith("/dashboard/products/") ? "Products" : undefined)
+    (pathname.startsWith("/dashboard/products/") ? "Products" : undefined) ??
+    (pathname.startsWith("/dashboard/notifications/") ? "Notifications" : undefined)
 
   return (
     <header className="sticky top-0 z-50 flex w-full items-center border-b bg-background">
@@ -54,6 +59,9 @@ export function SiteHeader() {
             )}
           </BreadcrumbList>
         </Breadcrumb>
+        <div className="ml-auto">
+          <NotificationBell />
+        </div>
       </div>
     </header>
   )

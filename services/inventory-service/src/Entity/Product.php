@@ -4,13 +4,14 @@ namespace App\Entity;
 
 use App\Repository\ProductRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
 {
     #[ORM\Id]
-    #[ORM\Column(options: ['unsigned' => true])]
-    private int $id;
+    #[ORM\Column(type: 'uuid')]
+    private Uuid $id;
 
     #[ORM\Column(length: 64, nullable: true)]
     private ?string $sku = null;
@@ -21,12 +22,17 @@ class Product
     #[ORM\Column(length: 16)]
     private ?string $status = null;
 
-    public function getId(): ?int
+    public function __construct()
+    {
+        $this->id = Uuid::v7();
+    }
+
+    public function getId(): Uuid
     {
         return $this->id;
     }
 
-    public function setId(int $id): static
+    public function setId(Uuid $id): static
     {
         $this->id = $id;
 

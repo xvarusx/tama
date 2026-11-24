@@ -6,13 +6,12 @@ namespace App\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** Body of POST /api/contact/{id}/blacklist */
-final class BlacklistContactInput
+/** Payload for the "blacklist a contact" state transition. */
+final readonly class BlacklistContactInput
 {
     public function __construct(
-        #[Assert\NotBlank(message: 'A reason is required to blacklist a contact.')]
-        #[Assert\Length(max: 2000)]
-        public readonly string $reason = '',
-    ) {
-    }
+        #[Assert\NotBlank]
+        #[Assert\Length(max: 255)]
+        public string $reason,
+    ) {}
 }

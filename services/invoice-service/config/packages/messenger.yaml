@@ -1,0 +1,38 @@
+framework:
+    messenger:
+        failure_transport: failed
+        serializer:
+            default_serializer: messenger.transport.symfony_serializer
+            symfony_serializer:
+                format: json
+        buses:
+            messenger.bus.default:
+                middleware:
+                    - doctrine_ping_connection
+                    - doctrine_close_connection
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: invoice_events
+                        type: fanout
+                retry_strategy:
+                    max_retries: 5
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 60000
+            failed:
+                dsn: 'doctrine://default?queue_name=failed'
+
+        routing:
+            App\Message\OrderReadyForInvoiceMessage: async
+            App\Message\PaymentReceivedMessage: async
+            App\Message\OutboxEventMessage: async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'
+                failed: 'in-memory://'

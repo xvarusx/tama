@@ -9,7 +9,7 @@ final readonly class VariantDocument
 {
     /** @param array<string, mixed>|null $options e.g. {"size": "M", "color": "red"} */
     public function __construct(
-        public int $id,
+        public string $id,
         public string $sku,
         public ?string $barcode,
         public ?array $options,

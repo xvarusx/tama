@@ -1,0 +1,3 @@
+parameters:
+    # Keep test uploads inside the disposable cache directory, never in public/payments-images.
+    media_dir: "%kernel.cache_dir%/uploads"

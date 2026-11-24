@@ -8,7 +8,7 @@ namespace App\Api\V1\Documentation;
 final readonly class UnitDocument
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $code,
         public bool $allowDecimal,
     ) {}
